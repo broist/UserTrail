@@ -110,3 +110,8 @@ def test_user_data_merged_into_record() -> None:
     doc["Event"].pop("EventData")
     doc["Event"]["UserData"] = {"EventXML": {"User": "CEG\\kovacs.janos"}}
     assert record_from_json(doc, "f", 1).data == {"User": "CEG\\kovacs.janos"}
+
+
+def test_invalid_event_id_message_is_hungarian() -> None:
+    with pytest.raises(ValueError, match="érvénytelen EventID"):
+        record_from_json(_doc(EventID="abc"), "f", 1)

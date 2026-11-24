@@ -109,7 +109,10 @@ def _event_id(value: Any) -> int:
         value = value.get("#text")
     if value is None:
         raise ValueError("a rekordnak nincs EventID mezője")
-    return int(value)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"érvénytelen EventID: {value!r}") from None
 
 
 def _attr(node: Any, name: str) -> Any:

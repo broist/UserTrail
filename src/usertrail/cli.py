@@ -3,7 +3,7 @@
 import enum
 import sqlite3
 from collections.abc import Iterator
-from datetime import datetime, tzinfo
+from datetime import datetime, timedelta, tzinfo
 from pathlib import Path
 from typing import Annotated
 
@@ -20,11 +20,12 @@ from rich.progress import (
 from rich.table import Table
 
 from usertrail import __version__, cli_hu
+from usertrail.correlate import DEFAULT_WINDOW, correlate_web, pivot_seeds, seed_time_range
 from usertrail.identity import IdentityQuery, SidMap, resolve_sid_only_names
 from usertrail.models import Category, Severity, TimelineEvent
 from usertrail.parsers.evtx_reader import ReadStats
-from usertrail.pipeline import discover_evtx, iter_events
-from usertrail.query import TimelineFilter, select
+from usertrail.pipeline import KIND_IIS, SourceFile, discover_sources, iter_events
+from usertrail.query import TimelineFilter, TimelineRow, select
 from usertrail.report.console import print_timeline
 from usertrail.store import CaseStore, StoreError, sha256_file
 from usertrail.timeutil import format_display, parse_bound, resolve_tz, tz_label
@@ -149,6 +150,34 @@ def timeline(
             "--include-machine-accounts", help="A $ végű gépfiókok eseményei is látszódjanak."
         ),
     ] = False,
+    pivot_ip: Annotated[
+        bool,
+        typer.Option(
+            "--pivot-ip",
+            help=(
+                "A felhasználó bejelentkezési IP-címeiről érkező webes (IIS) kérések "
+                "bevonása „korrelált” jelöléssel."
+            ),
+        ),
+    ] = False,
+    pivot_window: Annotated[
+        int,
+        typer.Option(
+            "--pivot-window",
+            min=1,
+            help="Az IP-pivot időablaka percben a bejelentkezés előtt és után.",
+        ),
+    ] = int(DEFAULT_WINDOW.total_seconds() // 60),
+    iis_tz: Annotated[
+        str | None,
+        typer.Option(
+            "--iis-tz",
+            help=(
+                "Az IIS-naplók időzónája, ha a szerveren helyi időre állították "
+                "(alapértelmezés: UTC, ahogy az IIS alapból naplóz)."
+            ),
+        ),
+    ] = None,
     lang: Annotated[Lang, typer.Option("--lang", help="A leírások nyelve.")] = Lang.hu,
 ) -> None:
     """Egy fiók (vagy egy forrás-IP) idővonalának megjelenítése."""
@@ -160,6 +189,9 @@ def timeline(
         raise typer.BadParameter("adj meg --user, --sid vagy --ip kapcsolót")
 
     display_tz, start, end = _time_options(tz, from_, to)
+    iis_zone = _iis_tz_option(iis_tz)
+    window = timedelta(minutes=pivot_window)
+    web_pool: list[TimelineEvent] = []
 
     if case is not None:
         with _open_case(case) as store:
@@ -173,15 +205,18 @@ def timeline(
                 end=end,
             )
             summary = f"[dim]{case}: {len(events)} jelölt esemény"
+            if pivot_ip and identity is not None:
+                web_pool = _web_pool_from_store(store, events, identity, window)
     else:
         assert source is not None
-        files = discover_evtx(source)
+        files = discover_sources(source)
         if not files:
-            err.print("[red]Nem található .evtx fájl.[/red]")
+            err.print("[red]Nem található támogatott naplófájl (.evtx vagy IIS .log).[/red]")
             raise typer.Exit(code=1)
         stats = ReadStats()
-        with err.status(f"{len(files)} EVTX-fájl beolvasása..."):
-            events = list(iter_events(files, stats))
+        with err.status(f"{len(files)} naplófájl beolvasása..."):
+            events = list(iter_events(files, stats, iis_zone))
+        web_pool = events
         sid_map = SidMap()
         for event in events:
             sid_map.learn_event(event)
@@ -203,12 +238,92 @@ def timeline(
         include_machine_accounts=include_machine_accounts,
     )
     rows = select(events, flt)
+    correlated: list[TimelineRow] = []
+    if pivot_ip:
+        if identity is None:
+            err.print("[yellow]A --pivot-ip csak --user vagy --sid megadásával működik.[/yellow]")
+        else:
+            correlated = _correlate(events, web_pool, flt, window, rows)
+            rows = sorted(rows + correlated, key=lambda row: row.event.sort_key)
     title = " / ".join(x for x in (user, sid, ip) if x)
     print_timeline(rows, display_tz, lang.value, f"UserTrail: {title}")
 
     err.print(f"{summary}, ebből {len(rows)} jelenik meg.[/dim]")
+    if correlated:
+        err.print(
+            f"[yellow]{len(correlated)} korrelált webes kérés (±{pivot_window} perc a "
+            "bejelentkezésektől). Ezek nem bizonyítják, hogy a kérést ugyanaz a "
+            "felhasználó küldte.[/yellow]"
+        )
     if case is None and stats.errors:
         _print_errors(stats.errors, stats.error_samples)
+
+
+def _iis_tz_option(iis_tz: str | None) -> tzinfo | None:
+    """Az --iis-tz értéke; megadás nélkül UTC (``None`` itt UTC-t jelent)."""
+    if iis_tz is None:
+        return None
+    try:
+        zone = resolve_tz(iis_tz)
+    except ValueError:
+        raise typer.BadParameter(f"ismeretlen időzóna: {iis_tz}", param_hint="--iis-tz") from None
+    if zone is None:
+        # A "local" itt a gép helyi időzónáját jelenti, rögzített IANA-névvel nem rendelkezik.
+        raise typer.BadParameter(
+            "az --iis-tz értéke IANA-időzóna legyen, pl. Europe/Budapest", param_hint="--iis-tz"
+        )
+    return zone
+
+
+def _seed_rows(
+    events: list[TimelineEvent], identity: IdentityQuery, flt_time: TimelineFilter
+) -> list[TimelineRow]:
+    """A pivotpontokhoz a felhasználó összes sikeres bejelentkezése kell, a kategória- és
+    súlyosságszűrőtől függetlenül (az időszakszűrő viszont érvényes)."""
+    seed_filter = TimelineFilter(
+        identity=identity,
+        start=flt_time.start,
+        end=flt_time.end,
+        include_machine_accounts=True,
+    )
+    return select(events, seed_filter)
+
+
+def _correlate(
+    events: list[TimelineEvent],
+    pool: list[TimelineEvent],
+    flt: TimelineFilter,
+    window: timedelta,
+    direct_rows: list[TimelineRow],
+) -> list[TimelineRow]:
+    assert flt.identity is not None
+    seeds = pivot_seeds(_seed_rows(events, flt.identity, flt))
+    web_filter = TimelineFilter(
+        start=flt.start,
+        end=flt.end,
+        categories=flt.categories,
+        min_severity=flt.min_severity,
+    )
+    return correlate_web(
+        seeds, pool, web_filter, window, exclude=(row.event.raw_ref for row in direct_rows)
+    )
+
+
+def _web_pool_from_store(
+    store: CaseStore,
+    events: list[TimelineEvent],
+    identity: IdentityQuery,
+    window: timedelta,
+) -> list[TimelineEvent]:
+    seeds = pivot_seeds(
+        select(events, TimelineFilter(identity=identity, include_machine_accounts=True))
+    )
+    bounds = seed_time_range(seeds, window)
+    if bounds is None:
+        return []
+    return store.events_from_ips(
+        {seed.ip for seed in seeds}, start=bounds[0], end=bounds[1], source="IIS"
+    )
 
 
 def _time_options(
@@ -254,15 +369,27 @@ def ingest(
         list[Path], typer.Argument(exists=True, help="Beolvasandó fájlok vagy mappák.")
     ],
     case: Annotated[Path, typer.Option("--case", help="Vizsgálati adatbázisfájl.")],
+    iis_tz: Annotated[
+        str | None,
+        typer.Option(
+            "--iis-tz",
+            help=(
+                "Az IIS-naplók időzónája, ha a szerveren helyi időre állították "
+                "(alapértelmezés: UTC, ahogy az IIS alapból naplóz)."
+            ),
+        ),
+    ] = None,
 ) -> None:
-    """EVTX-naplók betöltése egy vizsgálati adatbázisba (a mappákat rekurzívan bejárja).
+    """EVTX- és IIS-naplók betöltése egy vizsgálati adatbázisba (a mappákat rekurzívan bejárja).
 
     Minden fájl SHA-256 hash-e feldolgozás előtt rögzítésre kerül; a már betöltött
-    fájlokat (azonos hash) kihagyja.
+    fájlokat (azonos hash) kihagyja. Az IIS-naplókat a .log kiterjesztés és a W3C-fejléc
+    alapján ismeri fel.
     """
-    files = discover_evtx(paths)
+    iis_zone = _iis_tz_option(iis_tz)
+    files = discover_sources(paths)
     if not files:
-        err.print("[red]Nem található .evtx fájl.[/red]")
+        err.print("[red]Nem található támogatott naplófájl (.evtx vagy IIS .log).[/red]")
         raise typer.Exit(code=1)
 
     results: list[tuple[str, str, int, int, int]] = []
@@ -279,7 +406,8 @@ def ingest(
         )
         with progress:
             overall = progress.add_task("Fájlok", total=len(files), records=0)
-            for path in files:
+            for source_file in files:
+                path = source_file.path
                 progress.update(overall, description=f"Hash: {path.name}")
                 digest = sha256_file(path)
                 existing = store.find_source(digest)
@@ -292,11 +420,17 @@ def ingest(
                     store.discard_source(existing.id)
 
                 progress.update(overall, description=f"Feldolgozás: {path.name}")
-                source_id = store.add_source(path, path.stat().st_size, digest, "evtx")
+                options = {"iis_tz": iis_tz or "UTC"} if source_file.kind == KIND_IIS else {}
+                source_id = store.add_source(
+                    path, path.stat().st_size, digest, source_file.kind, options
+                )
                 stats = ReadStats()
 
-                def counted(path: Path = path, stats: ReadStats = stats) -> Iterator[TimelineEvent]:
-                    for number, event in enumerate(iter_events([path], stats), start=1):
+                def counted(
+                    source_file: SourceFile = source_file, stats: ReadStats = stats
+                ) -> Iterator[TimelineEvent]:
+                    events = iter_events([source_file], stats, iis_zone)
+                    for number, event in enumerate(events, start=1):
                         if number % 1000 == 0:
                             progress.update(overall, records=stats.records)
                         yield event

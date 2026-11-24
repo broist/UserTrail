@@ -48,6 +48,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "group_member_removed": (
             "{actor} removed {member} from {scope_text} group {group}{privileged_text}"
         ),
+        "web_request": "Web request: {method} {uri} → {status}, client: {src}",
+        "web_request_user": "Web request by {actor}: {method} {uri} → {status}, client: {src}",
     },
     "hu": {
         "logon_success": "Sikeres bejelentkezés: {target} ({logon_type_text}), forrás: {src}",
@@ -84,6 +86,8 @@ MESSAGES: dict[str, dict[str, str]] = {
             "{actor} eltávolította {member} tagot a(z) {group} {scope_text} csoportból"
             "{privileged_text}"
         ),
+        "web_request": "Webes kérés: {method} {uri} → {status}, kliens: {src}",
+        "web_request_user": "Webes kérés ({actor}): {method} {uri} → {status}, kliens: {src}",
     },
 }
 
@@ -177,6 +181,7 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "role.target": "target",
         "role.both": "actor+target",
         "role.related": "related (IP)",
+        "role.correlated": "correlated (IP)",
         "col.time": "Time",
         "col.source": "Source",
         "col.host": "Host",
@@ -192,6 +197,7 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "role.target": "célpont",
         "role.both": "szereplő+célpont",
         "role.related": "kapcsolódó (IP)",
+        "role.correlated": "korrelált (IP)",
         "col.time": "Idő",
         "col.source": "Forrás",
         "col.host": "Gép",

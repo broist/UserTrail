@@ -26,6 +26,7 @@ ROLE_STYLE: dict[Role, str] = {
     Role.TARGET: "bold blue",
     Role.BOTH: "bold magenta",
     Role.RELATED: "dim",
+    Role.CORRELATED: "italic yellow",
 }
 
 

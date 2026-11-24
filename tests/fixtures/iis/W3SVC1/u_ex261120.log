@@ -1,0 +1,16 @@
+#Software: Microsoft Internet Information Services 10.0
+#Version: 1.0
+#Date: 2026-11-20 08:00:00
+#Fields: date time s-ip cs-method cs-uri-stem cs-uri-query s-port cs-username c-ip cs(User-Agent) cs(Referer) sc-status sc-substatus sc-win32-status time-taken
+2026-11-20 08:55:00 10.0.0.20 GET /owa/ - 443 - 10.0.0.5 Mozilla/5.0+(Windows+NT+10.0) - 302 0 0 15
+2026-11-20 09:10:00 10.0.0.20 POST /owa/auth.owa - 443 - 10.0.0.5 Mozilla/5.0+(Windows+NT+10.0) https://mail.ceg.local/owa/ 200 0 0 120
+ez egy hibás sor
+2026-11-20 09:20:00 10.0.0.20 GET /ecp/ - 443 - 10.0.0.9 curl/8.0 - 401 2 5 3
+#Software: Microsoft Internet Information Services 10.0
+#Version: 1.0
+#Date: 2026-11-20 10:00:00
+#Fields: date time c-ip cs-username s-ip s-port cs-method cs-uri-stem cs-uri-query sc-status time-taken cs(User-Agent)
+2026-11-20 10:05:00 ::ffff:10.0.0.7 CEG\kovacs.janos 10.0.0.20 443 GET /intranet/doc.aspx id=42 200 30 Mozilla/5.0
+2026-11-20 10:06:00 10.0.0.8 nagy.peter@ceg.hu 10.0.0.20 443 GET /intranet/ - 200 12 Mozilla/5.0
+2026-11-20 11:30:00 10.0.0.5 - 10.0.0.20 443 GET /owa/late - 200 10 Mozilla/5.0
+2026-11-20 xx:yy:zz 10.0.0.5 - 10.0.0.20 443 GET /bad-time - 200 10 Mozilla/5.0

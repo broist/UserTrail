@@ -58,7 +58,28 @@ def test_schema_version_is_checked(tmp_path: Path) -> None:
     conn.close()
     with pytest.raises(StoreError, match="sémaverzió"):
         CaseStore.open(path)
-    assert SCHEMA_VERSION == 1
+
+
+def test_migration_from_schema_v1(tmp_path: Path) -> None:
+    path = tmp_path / "case.db"
+    CaseStore.open(path, create=True).close()
+    # Egy 1-es sémájú adatbázis szimulálása: nincs options oszlop.
+    conn = sqlite3.connect(path)
+    with conn:
+        conn.execute("ALTER TABLE sources DROP COLUMN options")
+        conn.execute("UPDATE meta SET value = '1' WHERE key = 'schema_version'")
+        conn.execute(
+            "INSERT INTO sources(path, size, sha256, kind, ingested_at, tool_version) "
+            "VALUES ('régi.evtx', 1, 'ff', 'evtx', '2026-01-01', '0.0.1')"
+        )
+    conn.close()
+    with CaseStore.open(path) as case:
+        (source,) = case.sources()
+        assert source.options == {}
+        version = case.conn.execute(
+            "SELECT value FROM meta WHERE key = 'schema_version'"
+        ).fetchone()[0]
+        assert int(version) == SCHEMA_VERSION == 2
 
 
 def test_events_round_trip(store: CaseStore, all_events: list[TimelineEvent]) -> None:

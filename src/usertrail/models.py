@@ -52,6 +52,8 @@ class Role(enum.StrEnum):
     TARGET = "target"  # a műveletet a keresett fiókon végezték
     BOTH = "both"  # pl. a felhasználó a saját jelszavát cseréli
     RELATED = "related"  # csak a forrás-IP alapján kapcsolódik
+    # IP-pivot: a felhasználó bejelentkezési IP-jéről érkezett, de nem bizonyított, hogy ő volt.
+    CORRELATED = "correlated"
 
 
 # Jól ismert helyi rendszerfiókok (az identitás-normalizálás külön jelöli őket).

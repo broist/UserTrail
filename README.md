@@ -13,9 +13,9 @@ eseményeket. A UserTrail identitásközpontú: egy fiók teljes történetét r
 forrásból, és minden eseménynél jelzi, hogy a fiók **szereplő** volt (ő csinálta) vagy
 **célpont** (vele csinálták).
 
-> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–4. mérföldkő: EVTX-fájlok betöltése
-> SQLite vizsgálati adatbázisba (SHA-256 hash-sel, duplikáció-szűréssel), illetve közvetlen
-> olvasása, és a Security-napló alábbi eseményei a konzolon:
+> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–5. mérföldkő: EVTX- és IIS-naplók
+> betöltése SQLite vizsgálati adatbázisba (SHA-256 hash-sel, duplikáció-szűréssel), illetve
+> közvetlen olvasása, IP-pivot a webes kérésekre, és a Security-napló alábbi eseményei:
 >
 > - bejelentkezés: 4624, 4625, 4634, 4647, 4648, 4672
 > - fiókok életciklusa: 4720, 4722, 4725, 4726, 4738, 4781 (átnevezés után a régi és az új
@@ -23,6 +23,7 @@ forrásból, és minden eseménynél jelzi, hogy a fiók **szereplő** volt (ő 
 > - jelszó: 4723, 4724; zárolás: 4740, 4767
 > - csoporttagság: 4728/4729, 4732/4733, 4756/4757; a kiemelt csoportba vétel (Domain Admins,
 >   Schema Admins, Enterprise Admins, Administrators) magas súlyosságú
+> - IIS W3C-naplók: a mezősorrend mindig a `#Fields:` sorból, akár fájlon belül változva
 
 ## Gyors kezdés (fejlesztői telepítés)
 
@@ -74,6 +75,25 @@ csoporttagsági események a tartományvezérlő Security-naplójában vannak. A
 érzékeny adatokat tartalmaz: ne tedd a repóba (a `.gitignore` az `.evtx` fájlokat kizárja), és
 próba után töröld.
 
+### IIS-naplók és IP-pivot
+
+Az IIS-naplókat (`C:\inetpub\logs\LogFiles\W3SVC<n>\u_exYYMMDD.log`) a `.log` kiterjesztés és a
+W3C-fejléc alapján ismeri fel, így elég a mappát megadni. Az IIS alapból UTC-ben naplóz; ha a
+szerveren helyi időre állították, add meg az `--iis-tz Europe/Budapest` kapcsolót (az
+adatbázisban fájlonként rögzül, milyen időzónával lett betöltve).
+
+```bash
+usertrail ingest ./dc01/ ./web01/W3SVC1/ --case ugy.db
+usertrail timeline --case ugy.db --user kovacs.janos --pivot-ip --pivot-window 60
+```
+
+A felhasználó nevével naplózott webes kérések (`cs-username`) közvetlen találatok. A
+`--pivot-ip` ezen felül behúzza azokat a kéréseket is, amelyek a felhasználó **sikeres
+bejelentkezéseinek** IP-címeiről érkeztek a bejelentkezés előtt/után ±`--pivot-window` percen
+belül. Ezek **„korrelált (IP)”** jelölést kapnak, mert nem bizonyítják, hogy a kérést ugyanaz a
+felhasználó küldte (ugyanarról az IP-ről mások is dolgozhattak, pl. NAT vagy terminálszerver
+mögül).
+
 Hasznos kapcsolók:
 
 | Kapcsoló | Jelentés |
@@ -83,6 +103,9 @@ Hasznos kapcsolók:
 | `--category` | Kategóriák vesszővel elválasztva, pl. `AUTHENTICATION,PRIVILEGE` |
 | `--min-severity` | Legalacsonyabb súlyosság: `info`, `low`, `medium`, `high` |
 | `--include-machine-accounts` | A `$` végű gépfiókok eseményei is látszanak |
+| `--pivot-ip` | Webes kérések bevonása a bejelentkezési IP-címekről (korrelált jelöléssel) |
+| `--pivot-window` | Az IP-pivot időablaka percben (alapértelmezés: 60) |
+| `--iis-tz` | Az IIS-naplók időzónája, ha nem UTC-ben naplóznak |
 | `--lang` | A leírások nyelve: `hu` (alapértelmezés) vagy `en` |
 
 Az eszköz a forrásfájlokat mindig csak olvasásra nyitja meg.

@@ -32,6 +32,8 @@ class TimelineFilter:
 class TimelineRow:
     event: TimelineEvent
     role: Role
+    # Korrelált soroknál annak a bejelentkezésnek a raw_ref-je, amelyhez kötöttük.
+    correlated_with: str | None = None
 
 
 def role_of(event: TimelineEvent, flt: TimelineFilter) -> Role | None:
@@ -59,6 +61,17 @@ def _is_machine_event(event: TimelineEvent) -> bool:
     return is_machine_account(subject)
 
 
+def passes_filters(event: TimelineEvent, flt: TimelineFilter) -> bool:
+    """Az identitástól független feltételek: időszak, kategória, súlyosság."""
+    if flt.start is not None and event.timestamp_utc < flt.start:
+        return False
+    if flt.end is not None and event.timestamp_utc >= flt.end:
+        return False
+    if flt.categories is not None and event.category not in flt.categories:
+        return False
+    return event.severity.rank >= flt.min_severity.rank
+
+
 def select(events: Iterable[TimelineEvent], flt: TimelineFilter) -> list[TimelineRow]:
     """Események szűrése, stabil idővonal-sorrendben visszaadva."""
     skip_machines = not flt.include_machine_accounts and not (
@@ -66,13 +79,7 @@ def select(events: Iterable[TimelineEvent], flt: TimelineFilter) -> list[Timelin
     )
     rows: list[TimelineRow] = []
     for event in events:
-        if flt.start is not None and event.timestamp_utc < flt.start:
-            continue
-        if flt.end is not None and event.timestamp_utc >= flt.end:
-            continue
-        if flt.categories is not None and event.category not in flt.categories:
-            continue
-        if event.severity.rank < flt.min_severity.rank:
+        if not passes_filters(event, flt):
             continue
         if skip_machines and _is_machine_event(event):
             continue

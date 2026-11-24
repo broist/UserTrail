@@ -22,10 +22,13 @@ from usertrail import __version__
 from usertrail.identity import SidMap, is_machine_account, well_known_label
 from usertrail.models import Category, Identity, Severity, TimelineEvent
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 BATCH_SIZE = 5000
 _HASH_CHUNK = 1024 * 1024
 
+# A sources.options a feldolgozási beállításokat tárolja JSON-ként, pl.
+# {"iis_tz": "Europe/Budapest"}. (Az SQL-ben nincs komment, mert az SQLite
+# ALTER TABLE a tárolt CREATE TABLE szöveget írja át.)
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta (
     key TEXT PRIMARY KEY,
@@ -43,7 +46,8 @@ CREATE TABLE IF NOT EXISTS sources (
     events INTEGER NOT NULL DEFAULT 0,
     errors INTEGER NOT NULL DEFAULT 0,
     error_samples TEXT NOT NULL DEFAULT '[]',
-    completed INTEGER NOT NULL DEFAULT 0
+    completed INTEGER NOT NULL DEFAULT 0,
+    options TEXT NOT NULL DEFAULT '{}'
 );
 CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY,
@@ -115,6 +119,7 @@ class SourceInfo:
     errors: int
     error_samples: list[str]
     completed: bool
+    options: dict[str, Any]
 
 
 @dataclass(slots=True)
@@ -211,10 +216,19 @@ class CaseStore:
                         ("created_by", f"usertrail {__version__}"),
                     ],
                 )
-            elif int(row["value"]) != SCHEMA_VERSION:
-                raise StoreError(
-                    f"nem támogatott adatbázis-sémaverzió: {row['value']} (várt: {SCHEMA_VERSION})"
-                )
+            else:
+                version = int(row["value"])
+                if version == 1:
+                    self._migrate_v1_to_v2()
+                elif version != SCHEMA_VERSION:
+                    raise StoreError(
+                        f"nem támogatott adatbázis-sémaverzió: {version} (várt: {SCHEMA_VERSION})"
+                    )
+
+    def _migrate_v1_to_v2(self) -> None:
+        """1 -> 2: a sources tábla ``options`` oszlopot kap (pl. az IIS-időzónához)."""
+        self.conn.execute("ALTER TABLE sources ADD COLUMN options TEXT NOT NULL DEFAULT '{}'")
+        self.conn.execute("UPDATE meta SET value = '2' WHERE key = 'schema_version'")
 
     def close(self) -> None:
         self.conn.close()
@@ -231,12 +245,27 @@ class CaseStore:
         row = self.conn.execute("SELECT * FROM sources WHERE sha256 = ?", (sha256,)).fetchone()
         return self._source(row) if row else None
 
-    def add_source(self, path: Path, size: int, sha256: str, kind: str) -> int:
+    def add_source(
+        self,
+        path: Path,
+        size: int,
+        sha256: str,
+        kind: str,
+        options: dict[str, Any] | None = None,
+    ) -> int:
         with self.conn:
             cursor = self.conn.execute(
-                "INSERT INTO sources(path, size, sha256, kind, ingested_at, tool_version) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                (str(path), size, sha256, kind, _ts(datetime.now(UTC)), __version__),
+                "INSERT INTO sources(path, size, sha256, kind, ingested_at, tool_version, "
+                "options) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    str(path),
+                    size,
+                    sha256,
+                    kind,
+                    _ts(datetime.now(UTC)),
+                    __version__,
+                    _json(options or {}),
+                ),
             )
         assert cursor.lastrowid is not None
         return cursor.lastrowid
@@ -281,6 +310,7 @@ class CaseStore:
             errors=row["errors"],
             error_samples=json.loads(row["error_samples"]),
             completed=bool(row["completed"]),
+            options=json.loads(row["options"]),
         )
 
     # --- események -------------------------------------------------------------------
@@ -400,6 +430,34 @@ class CaseStore:
             params.append(_ts(start))
         if end is not None:
             where.append("timestamp_utc < ?")
+            params.append(_ts(end))
+        rows = self.conn.execute(
+            f"SELECT * FROM events WHERE {' AND '.join(where)} ORDER BY timestamp_utc, id",
+            params,
+        ).fetchall()
+        return self._events_from_rows(rows)
+
+    def events_from_ips(
+        self,
+        ips: Iterable[str],
+        start: datetime | None = None,
+        end: datetime | None = None,
+        source: str | None = None,
+    ) -> list[TimelineEvent]:
+        """Az adott IP-címekről érkező események (pl. az IP-pivothoz az IIS-kérések)."""
+        ip_list = sorted(set(ips))
+        if not ip_list:
+            return []
+        where = [f"src_ip IN ({','.join('?' * len(ip_list))})"]
+        params: list[Any] = list(ip_list)
+        if source is not None:
+            where.append("source = ?")
+            params.append(source)
+        if start is not None:
+            where.append("timestamp_utc >= ?")
+            params.append(_ts(start))
+        if end is not None:
+            where.append("timestamp_utc <= ?")
             params.append(_ts(end))
         rows = self.conn.execute(
             f"SELECT * FROM events WHERE {' AND '.join(where)} ORDER BY timestamp_utc, id",
