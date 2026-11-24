@@ -13,8 +13,9 @@ eseményeket. A UserTrail identitásközpontú: egy fiók teljes történetét r
 forrásból, és minden eseménynél jelzi, hogy a fiók **szereplő** volt (ő csinálta) vagy
 **célpont** (vele csinálták).
 
-> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–3. mérföldkő: az EVTX-fájlok közvetlen
-> olvasása és a Security-napló alábbi eseményei a konzolon:
+> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–4. mérföldkő: EVTX-fájlok betöltése
+> SQLite vizsgálati adatbázisba (SHA-256 hash-sel, duplikáció-szűréssel), illetve közvetlen
+> olvasása, és a Security-napló alábbi eseményei a konzolon:
 >
 > - bejelentkezés: 4624, 4625, 4634, 4647, 4648, 4672
 > - fiókok életciklusa: 4720, 4722, 4725, 4726, 4738, 4781 (átnevezés után a régi és az új
@@ -38,6 +39,40 @@ A `--user` elfogadja a `DOMAIN\felhasználó`, az UPN (`felhasználó@domain`) �
 alakot, a `--sid` pedig SID-et vár. A nevek összehasonlítása kis- és nagybetűtől független, és
 az eszköz a naplókból tanult SID-ekhez köti őket, így a csak SID-et tartalmazó események is
 megtalálhatók.
+
+### Vizsgálati adatbázissal
+
+```bash
+usertrail ingest ./bizonyitekok/ --case ugy-2026-11.db     # betöltés, hash-ek rögzítése
+usertrail users --case ugy-2026-11.db                      # ismert fiókok listája
+usertrail timeline --case ugy-2026-11.db --user kovacs.janos --tz Europe/Budapest
+```
+
+Az `ingest` minden fájl SHA-256 hash-ét rögzíti feldolgozás előtt, és a már betöltött fájlokat
+(azonos hash) kihagyja, így többször is lefuttatható ugyanarra a mappára.
+
+### Kipróbálás a saját gépeden
+
+A saját Windows-gépeden is ki tudod próbálni. A Security-napló kimentéséhez rendszergazdai
+PowerShell kell:
+
+```powershell
+mkdir C:\usertrail-proba
+wevtutil epl Security C:\usertrail-proba\Security.evtx
+```
+
+Ezután (nem kell rendszergazdai jog):
+
+```powershell
+usertrail ingest C:\usertrail-proba --case C:\usertrail-proba\proba.db
+usertrail users --case C:\usertrail-proba\proba.db
+usertrail timeline --case C:\usertrail-proba\proba.db --user $env:USERNAME --tz Europe/Budapest
+```
+
+Egy munkaállomáson főleg bejelentkezési események (4624, 4634, 4672) lesznek; a fiókkezelési és
+csoporttagsági események a tartományvezérlő Security-naplójában vannak. A kimentett napló
+érzékeny adatokat tartalmaz: ne tedd a repóba (a `.gitignore` az `.evtx` fájlokat kizárja), és
+próba után töröld.
 
 Hasznos kapcsolók:
 
