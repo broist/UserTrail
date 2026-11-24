@@ -1,0 +1,805 @@
+[
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4768,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T08:58:00Z"
+          }
+        },
+        "EventRecordID": 301,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserName": "kovacs.janos",
+        "TargetDomainName": "CEG.LOCAL",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "ServiceName": "krbtgt",
+        "ServiceSid": "S-1-5-21-1111111111-2222222222-3333333333-502",
+        "TicketOptions": "0x40810010",
+        "Status": "0x0",
+        "TicketEncryptionType": "0x12",
+        "PreAuthType": "2",
+        "IpAddress": "::ffff:10.0.0.5",
+        "IpPort": "49712"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4768,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T08:50:00Z"
+          }
+        },
+        "EventRecordID": 302,
+        "Keywords": "0x8010000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserName": "kovacs.janos",
+        "TargetDomainName": "CEG.LOCAL",
+        "TargetSid": "S-1-0-0",
+        "ServiceName": "krbtgt",
+        "Status": "0x12",
+        "IpAddress": "::ffff:10.0.0.66",
+        "IpPort": "50000"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4769,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T08:58:01Z"
+          }
+        },
+        "EventRecordID": 303,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserName": "kovacs.janos@CEG.LOCAL",
+        "TargetDomainName": "CEG.LOCAL",
+        "ServiceName": "FS01$",
+        "ServiceSid": "S-1-5-21-1111111111-2222222222-3333333333-2001",
+        "TicketOptions": "0x40810000",
+        "TicketEncryptionType": "0x17",
+        "IpAddress": "::ffff:10.0.0.5",
+        "IpPort": "49713",
+        "Status": "0x0"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4771,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T08:49:00Z"
+          }
+        },
+        "EventRecordID": 304,
+        "Keywords": "0x8010000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserName": "kovacs.janos",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "ServiceName": "krbtgt/CEG.LOCAL",
+        "TicketOptions": "0x40810010",
+        "Status": "0x18",
+        "PreAuthType": "2",
+        "IpAddress": "::ffff:10.0.0.66",
+        "IpPort": "50001"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4776,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T08:57:00Z"
+          }
+        },
+        "EventRecordID": 305,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "PackageName": "MICROSOFT_AUTHENTICATION_PACKAGE_V1_0",
+        "TargetUserName": "kovacs.janos",
+        "Workstation": "WS-042",
+        "Status": "0x0"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4776,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T08:48:00Z"
+          }
+        },
+        "EventRecordID": 306,
+        "Keywords": "0x8010000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "PackageName": "MICROSOFT_AUTHENTICATION_PACKAGE_V1_0",
+        "TargetUserName": "kovacs.janos",
+        "Workstation": "KALI",
+        "Status": "0xc000006a"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Eventlog"
+          }
+        },
+        "EventID": 1102,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T12:00:00Z"
+          }
+        },
+        "EventRecordID": 307,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "UserData": {
+        "LogFileCleared": {
+          "#attributes": {
+            "xmlns": "http://manifests.microsoft.com/win/2004/08/windows/eventlog"
+          },
+          "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+          "SubjectUserName": "kovacs.janos",
+          "SubjectDomainName": "CEG",
+          "SubjectLogonId": "0x3e7a1f"
+        }
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4688,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T09:01:00Z"
+          }
+        },
+        "EventRecordID": 308,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserName": "kovacs.janos",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x3e7a1f",
+        "NewProcessId": "0x1a2c",
+        "NewProcessName": "C:\\Windows\\System32\\cmd.exe",
+        "TokenElevationType": "%%1936",
+        "ProcessId": "0x0f10",
+        "CommandLine": "cmd.exe /c whoami /all xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "TargetUserSid": "S-1-0-0",
+        "TargetUserName": "-",
+        "TargetDomainName": "-",
+        "ParentProcessName": "C:\\Windows\\explorer.exe",
+        "MandatoryLabel": "S-1-16-12288"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4698,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T09:02:00Z"
+          }
+        },
+        "EventRecordID": 309,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserName": "kovacs.janos",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x3e7a1f",
+        "TaskName": "\\Frissites",
+        "TaskContent": "<Task>...</Task>"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Service Control Manager"
+          }
+        },
+        "EventID": {
+          "#attributes": {
+            "Qualifiers": 16384
+          },
+          "#text": 7045
+        },
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T09:03:00Z"
+          }
+        },
+        "EventRecordID": 310,
+        "Keywords": "0x8080000000000000",
+        "Channel": "System",
+        "Computer": "DC01.ceg.local",
+        "Security": {
+          "#attributes": {
+            "UserID": "S-1-5-21-1111111111-2222222222-3333333333-1105"
+          }
+        }
+      },
+      "EventData": {
+        "ServiceName": "UpdaterSvc",
+        "ImagePath": "C:\\Users\\Public\\upd.exe",
+        "ServiceType": "user mode service",
+        "StartType": "auto start",
+        "AccountName": "LocalSystem"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Eventlog"
+          }
+        },
+        "EventID": 104,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T12:00:05Z"
+          }
+        },
+        "EventRecordID": 311,
+        "Keywords": "0x8020000000000000",
+        "Channel": "System",
+        "Computer": "DC01.ceg.local",
+        "Security": {
+          "#attributes": {
+            "UserID": "S-1-5-21-1111111111-2222222222-3333333333-1105"
+          }
+        }
+      },
+      "UserData": {
+        "LogFileCleared": {
+          "SubjectUserName": "kovacs.janos",
+          "SubjectDomainName": "CEG",
+          "Channel": "System",
+          "BackupPath": "-"
+        }
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-TerminalServices-RemoteConnectionManager"
+          }
+        },
+        "EventID": 1149,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T08:59:59Z"
+          }
+        },
+        "EventRecordID": 312,
+        "Keywords": "0x1000000000000000",
+        "Channel": "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational",
+        "Computer": "WS-042.ceg.local"
+      },
+      "UserData": {
+        "EventXML": {
+          "Param1": "kovacs.janos",
+          "Param2": "CEG",
+          "Param3": "10.0.0.5"
+        }
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-TerminalServices-LocalSessionManager"
+          }
+        },
+        "EventID": 21,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T09:00:02Z"
+          }
+        },
+        "EventRecordID": 313,
+        "Keywords": "0x1000000000000000",
+        "Channel": "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational",
+        "Computer": "WS-042.ceg.local"
+      },
+      "UserData": {
+        "EventXML": {
+          "User": "CEG\\kovacs.janos",
+          "SessionID": "3",
+          "Address": "10.0.0.5"
+        }
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-TerminalServices-LocalSessionManager"
+          }
+        },
+        "EventID": 24,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T10:30:00Z"
+          }
+        },
+        "EventRecordID": 314,
+        "Keywords": "0x1000000000000000",
+        "Channel": "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational",
+        "Computer": "WS-042.ceg.local"
+      },
+      "UserData": {
+        "EventXML": {
+          "User": "CEG\\kovacs.janos",
+          "SessionID": "3",
+          "Address": "10.0.0.5"
+        }
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-TerminalServices-LocalSessionManager"
+          }
+        },
+        "EventID": 25,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T11:00:00Z"
+          }
+        },
+        "EventRecordID": 315,
+        "Keywords": "0x1000000000000000",
+        "Channel": "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational",
+        "Computer": "WS-042.ceg.local"
+      },
+      "UserData": {
+        "EventXML": {
+          "User": "CEG\\kovacs.janos",
+          "SessionID": "3",
+          "Address": "10.0.0.9"
+        }
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-TerminalServices-LocalSessionManager"
+          }
+        },
+        "EventID": 23,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T17:00:00Z"
+          }
+        },
+        "EventRecordID": 316,
+        "Keywords": "0x1000000000000000",
+        "Channel": "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational",
+        "Computer": "WS-042.ceg.local"
+      },
+      "UserData": {
+        "EventXML": {
+          "User": "CEG\\kovacs.janos",
+          "SessionID": "3"
+        }
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-TerminalServices-LocalSessionManager"
+          }
+        },
+        "EventID": 21,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T07:30:00Z"
+          }
+        },
+        "EventRecordID": 317,
+        "Keywords": "0x1000000000000000",
+        "Channel": "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational",
+        "Computer": "WS-042.ceg.local"
+      },
+      "UserData": {
+        "EventXML": {
+          "User": "CEG\\nagy.peter",
+          "SessionID": "1",
+          "Address": "LOCAL"
+        }
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-PowerShell"
+          }
+        },
+        "EventID": 4104,
+        "Level": 5,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T09:05:00Z"
+          }
+        },
+        "EventRecordID": 318,
+        "Keywords": "0x0",
+        "Channel": "Microsoft-Windows-PowerShell/Operational",
+        "Computer": "WS-042.ceg.local",
+        "Security": {
+          "#attributes": {
+            "UserID": "S-1-5-21-1111111111-2222222222-3333333333-1105"
+          }
+        }
+      },
+      "EventData": {
+        "MessageNumber": 1,
+        "MessageTotal": 1,
+        "ScriptBlockText": "Get-Process | Select-Object -First 5",
+        "ScriptBlockId": "{aaaa}",
+        "Path": "C:\\temp\\x.ps1"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-PowerShell"
+          }
+        },
+        "EventID": 4104,
+        "Level": 5,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T09:06:00Z"
+          }
+        },
+        "EventRecordID": 319,
+        "Keywords": "0x0",
+        "Channel": "Microsoft-Windows-PowerShell/Operational",
+        "Computer": "WS-042.ceg.local",
+        "Security": {
+          "#attributes": {
+            "UserID": "S-1-5-21-1111111111-2222222222-3333333333-1105"
+          }
+        }
+      },
+      "EventData": {
+        "MessageNumber": 1,
+        "MessageTotal": 3,
+        "ScriptBlockText": "function Invoke-Big {\n  # első rész ",
+        "ScriptBlockId": "{bbbb}",
+        "Path": "C:\\temp\\x.ps1"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-PowerShell"
+          }
+        },
+        "EventID": 4104,
+        "Level": 5,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T09:06:00Z"
+          }
+        },
+        "EventRecordID": 320,
+        "Keywords": "0x0",
+        "Channel": "Microsoft-Windows-PowerShell/Operational",
+        "Computer": "WS-042.ceg.local",
+        "Security": {
+          "#attributes": {
+            "UserID": "S-1-5-21-1111111111-2222222222-3333333333-1105"
+          }
+        }
+      },
+      "EventData": {
+        "MessageNumber": 1,
+        "MessageTotal": 1,
+        "ScriptBlockText": "whoami",
+        "ScriptBlockId": "{cccc}",
+        "Path": "C:\\temp\\x.ps1"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-PowerShell"
+          }
+        },
+        "EventID": 4104,
+        "Level": 3,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T09:06:01Z"
+          }
+        },
+        "EventRecordID": 321,
+        "Keywords": "0x0",
+        "Channel": "Microsoft-Windows-PowerShell/Operational",
+        "Computer": "WS-042.ceg.local",
+        "Security": {
+          "#attributes": {
+            "UserID": "S-1-5-21-1111111111-2222222222-3333333333-1105"
+          }
+        }
+      },
+      "EventData": {
+        "MessageNumber": 2,
+        "MessageTotal": 3,
+        "ScriptBlockText": "második rész IEX(New-Object Net.WebClient)",
+        "ScriptBlockId": "{bbbb}",
+        "Path": "C:\\temp\\x.ps1"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-PowerShell"
+          }
+        },
+        "EventID": 4104,
+        "Level": 5,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T09:06:01Z"
+          }
+        },
+        "EventRecordID": 322,
+        "Keywords": "0x0",
+        "Channel": "Microsoft-Windows-PowerShell/Operational",
+        "Computer": "WS-042.ceg.local",
+        "Security": {
+          "#attributes": {
+            "UserID": "S-1-5-21-1111111111-2222222222-3333333333-1105"
+          }
+        }
+      },
+      "EventData": {
+        "MessageNumber": 3,
+        "MessageTotal": 3,
+        "ScriptBlockText": " harmadik rész\n}",
+        "ScriptBlockId": "{bbbb}",
+        "Path": "C:\\temp\\x.ps1"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-PowerShell"
+          }
+        },
+        "EventID": 4104,
+        "Level": 5,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T09:07:00Z"
+          }
+        },
+        "EventRecordID": 323,
+        "Keywords": "0x0",
+        "Channel": "Microsoft-Windows-PowerShell/Operational",
+        "Computer": "WS-042.ceg.local",
+        "Security": {
+          "#attributes": {
+            "UserID": "S-1-5-21-1111111111-2222222222-3333333333-1105"
+          }
+        }
+      },
+      "EventData": {
+        "MessageNumber": 1,
+        "MessageTotal": 3,
+        "ScriptBlockText": "hiányos első ",
+        "ScriptBlockId": "{dddd}",
+        "Path": "C:\\temp\\x.ps1"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-PowerShell"
+          }
+        },
+        "EventID": 4104,
+        "Level": 5,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T09:07:00Z"
+          }
+        },
+        "EventRecordID": 324,
+        "Keywords": "0x0",
+        "Channel": "Microsoft-Windows-PowerShell/Operational",
+        "Computer": "WS-042.ceg.local",
+        "Security": {
+          "#attributes": {
+            "UserID": "S-1-5-21-1111111111-2222222222-3333333333-1105"
+          }
+        }
+      },
+      "EventData": {
+        "MessageNumber": 2,
+        "MessageTotal": 3,
+        "ScriptBlockText": "hiányos második",
+        "ScriptBlockId": "{dddd}",
+        "Path": "C:\\temp\\x.ps1"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-PowerShell"
+          }
+        },
+        "EventID": 4100,
+        "Level": 4,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-20T09:08:00Z"
+          }
+        },
+        "EventRecordID": 325,
+        "Keywords": "0x0",
+        "Channel": "Microsoft-Windows-PowerShell/Operational",
+        "Computer": "WS-042.ceg.local",
+        "Security": {
+          "#attributes": {
+            "UserID": "S-1-5-21-1111111111-2222222222-3333333333-1105"
+          }
+        }
+      },
+      "EventData": {
+        "Payload": "nem leképezett"
+      }
+    }
+  }
+]

@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
-
-from usertrail.i18n import normalize_status
+from usertrail.i18n import normalize_kerberos_status, normalize_status
 from usertrail.identity import clean, make_identity, parse_account, privileged_group
-from usertrail.mappings.event_map import spec_for
+from usertrail.mappings.event_map import SECURITY
 from usertrail.models import Severity, TimelineEvent
-from usertrail.parsers.base import Handler, build_event
+from usertrail.parsers.base import Handler, MappedParser
 from usertrail.parsers.evtx_reader import RawRecord
 
-CHANNEL = "Security"
 SOURCE = "Security"
 
 # A Keywords mező auditbitjei.
@@ -37,6 +34,9 @@ CHANGED_ATTRIBUTE_FIELDS = (
     "SidHistory",
     "LogonHours",
 )
+
+# A 4688-as parancssor legfeljebb ilyen hosszan kerül a leírásba.
+MAX_COMMAND_IN_MESSAGE = 160
 
 # Csoportesemények hatóköre az Event ID alapján.
 GROUP_SCOPES: dict[int, str] = {
@@ -162,6 +162,39 @@ def _group_membership(record: RawRecord, event: TimelineEvent) -> None:
     )
 
 
+def _kerberos(record: RawRecord, event: TimelineEvent) -> None:
+    """4768/4769/4771: Kerberos-hibakód normalizálása; sikertelen kérésnél ``*_failure``."""
+    raw = record.data.get("Status")
+    if raw is None:
+        raw = record.data.get("FailureCode")
+    status = normalize_kerberos_status(raw)
+    event.details["Status"] = status
+    event.message_params["KerberosStatus"] = status
+    if event.action != "kerberos_preauth_failed" and status not in (None, "0x0"):
+        event.action = f"{event.action}_failure"
+        event.message_key = event.action
+        event.severity = Severity.LOW
+
+
+def _ntlm(record: RawRecord, event: TimelineEvent) -> None:
+    """4776: NTSTATUS normalizálása; sikertelen ellenőrzésnél ``ntlm_validation_failure``."""
+    status = normalize_status(record.data.get("Status"))
+    event.details["Status"] = status
+    event.message_params["Status"] = status
+    if status not in (None, "0x00000000"):
+        event.action = "ntlm_validation_failure"
+        event.message_key = event.action
+        event.severity = Severity.LOW
+
+
+def _process_created(record: RawRecord, event: TimelineEvent) -> None:
+    """4688: a parancssor rövidítve kerül a leírásba (teljes hossza a details-ben)."""
+    command = clean(record.data.get("CommandLine"))
+    if command and len(command) > MAX_COMMAND_IN_MESSAGE:
+        command = command[: MAX_COMMAND_IN_MESSAGE - 1] + "…"
+    event.message_params["command"] = command
+
+
 HANDLERS: dict[int, Handler] = {
     4624: _logon,
     4625: _logon,
@@ -172,18 +205,14 @@ HANDLERS: dict[int, Handler] = {
     4740: _account_locked,
     4781: _account_renamed,
     **dict.fromkeys(GROUP_SCOPES, _group_membership),
+    4768: _kerberos,
+    4769: _kerberos,
+    4771: _kerberos,
+    4776: _ntlm,
+    4688: _process_created,
 }
 
 
-class SecurityParser:
-    channels = frozenset({CHANNEL})
-
-    def parse(self, record: RawRecord) -> Iterator[TimelineEvent]:
-        spec = spec_for(CHANNEL, record.event_id)
-        if spec is None:
-            return
-        event = build_event(record, spec, SOURCE)
-        handler = HANDLERS.get(record.event_id)
-        if handler is not None:
-            handler(record, event)
-        yield event
+class SecurityParser(MappedParser):
+    def __init__(self) -> None:
+        super().__init__(SECURITY, SOURCE, HANDLERS)

@@ -13,6 +13,22 @@ from typing import TypeAlias
 
 from usertrail.models import Category, Severity
 
+# Csatornanevek, ahogy az ``Event.System.Channel`` mezőben szerepelnek.
+SECURITY = "Security"
+SYSTEM = "System"
+RDP_LSM = "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational"
+RDP_RCM = "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational"
+POWERSHELL = "Microsoft-Windows-PowerShell/Operational"
+
+# A ``TimelineEvent.source`` mezőbe kerülő rövid forrásnevek.
+SOURCE_LABELS: dict[str, str] = {
+    SECURITY: "Security",
+    SYSTEM: "System",
+    RDP_LSM: "RDP-LSM",
+    RDP_RCM: "RDP-RCM",
+    POWERSHELL: "PowerShell",
+}
+
 # (névmező, tartománymező, SID-mező); bármelyik elem lehet None.
 IdentityFields: TypeAlias = tuple[str | None, str | None, str | None]
 SUBJECT: IdentityFields = ("SubjectUserName", "SubjectDomainName", "SubjectUserSid")
@@ -182,6 +198,168 @@ EVENT_SPECS: tuple[EventSpec, ...] = (
             (4756, "group_member_added"),
             (4757, "group_member_removed"),
         )
+    ),
+    # --- Security: Kerberos és NTLM ---------------------------------------------------
+    # A sikertelen kéréseknél a kezelőfüggvény ``*_failure`` műveletre vált.
+    EventSpec(
+        "Security",
+        4768,
+        "kerberos_tgt",
+        Category.AUTHENTICATION,
+        actor=None,
+        target=ACCOUNT,
+        ip_field="IpAddress",
+        detail_fields=(
+            "Status",
+            "ServiceName",
+            "TicketOptions",
+            "TicketEncryptionType",
+            "PreAuthType",
+            "IpAddress",
+            "IpPort",
+        ),
+    ),
+    EventSpec(
+        "Security",
+        4769,
+        "kerberos_service_ticket",
+        Category.AUTHENTICATION,
+        actor=None,
+        # A TargetUserName itt felhasznalo@REALM alakú.
+        target=("TargetUserName", "TargetDomainName", None),
+        ip_field="IpAddress",
+        detail_fields=(
+            "Status",
+            "ServiceName",
+            "ServiceSid",
+            "TicketOptions",
+            "TicketEncryptionType",
+            "IpAddress",
+            "IpPort",
+        ),
+    ),
+    EventSpec(
+        "Security",
+        4771,
+        "kerberos_preauth_failed",
+        Category.AUTHENTICATION,
+        Severity.LOW,
+        actor=None,
+        target=("TargetUserName", None, "TargetSid"),
+        ip_field="IpAddress",
+        detail_fields=(
+            "Status",
+            "FailureCode",
+            "ServiceName",
+            "PreAuthType",
+            "IpAddress",
+            "IpPort",
+        ),
+    ),
+    EventSpec(
+        "Security",
+        4776,
+        "ntlm_validation",
+        Category.AUTHENTICATION,
+        actor=None,
+        target=("TargetUserName", None, None),
+        detail_fields=("Workstation", "Status", "PackageName"),
+    ),
+    # --- Security: egyéb -------------------------------------------------------------
+    EventSpec(
+        "Security",
+        1102,
+        "audit_log_cleared",
+        Category.LOG_TAMPERING,
+        Severity.HIGH,
+        target=None,
+        detail_fields=("SubjectLogonId",),
+    ),
+    EventSpec(
+        "Security",
+        4688,
+        "process_created",
+        Category.EXECUTION,
+        detail_fields=(
+            "NewProcessName",
+            "CommandLine",
+            "ParentProcessName",
+            "NewProcessId",
+            "ProcessId",
+            "TokenElevationType",
+            "MandatoryLabel",
+        ),
+    ),
+    EventSpec(
+        "Security",
+        4698,
+        "scheduled_task_created",
+        Category.PERSISTENCE,
+        Severity.MEDIUM,
+        target=None,
+        detail_fields=("TaskName", "TaskContent"),
+    ),
+    # --- System ------------------------------------------------------------------------
+    # A 7045 szereplője a System.Security UserID SID-je (a kezelőfüggvény állítja be).
+    EventSpec(
+        SYSTEM,
+        7045,
+        "service_installed",
+        Category.PERSISTENCE,
+        Severity.MEDIUM,
+        actor=None,
+        target=None,
+        detail_fields=("ServiceName", "ImagePath", "ServiceType", "StartType", "AccountName"),
+    ),
+    EventSpec(
+        SYSTEM,
+        104,
+        "log_cleared",
+        Category.LOG_TAMPERING,
+        Severity.HIGH,
+        actor=("SubjectUserName", "SubjectDomainName", None),
+        target=None,
+        detail_fields=("Channel", "BackupPath"),
+    ),
+    # --- RDP: Local Session Manager ----------------------------------------------------
+    *(
+        EventSpec(
+            RDP_LSM,
+            event_id,
+            action,
+            Category.REMOTE_ACCESS,
+            actor=None,
+            target=("User", None, None),
+            ip_field="Address",
+            detail_fields=("SessionID", "Address"),
+        )
+        for event_id, action in (
+            (21, "rdp_logon"),
+            (23, "rdp_logoff"),
+            (24, "rdp_disconnect"),
+            (25, "rdp_reconnect"),
+        )
+    ),
+    # --- RDP: Remote Connection Manager ------------------------------------------------
+    EventSpec(
+        RDP_RCM,
+        1149,
+        "rdp_auth_success",
+        Category.REMOTE_ACCESS,
+        actor=None,
+        target=("Param1", "Param2", None),
+        ip_field="Param3",
+    ),
+    # --- PowerShell ------------------------------------------------------------------
+    # A szereplő a System.Security UserID SID-je; a darabokat a PowerShellParser fűzi össze.
+    EventSpec(
+        POWERSHELL,
+        4104,
+        "script_block",
+        Category.EXECUTION,
+        actor=None,
+        target=None,
+        detail_fields=("ScriptBlockId", "Path"),
     ),
 )
 

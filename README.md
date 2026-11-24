@@ -13,9 +13,9 @@ eseményeket. A UserTrail identitásközpontú: egy fiók teljes történetét r
 forrásból, és minden eseménynél jelzi, hogy a fiók **szereplő** volt (ő csinálta) vagy
 **célpont** (vele csinálták).
 
-> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–5. mérföldkő: EVTX- és IIS-naplók
+> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–6. mérföldkő: EVTX- és IIS-naplók
 > betöltése SQLite vizsgálati adatbázisba (SHA-256 hash-sel, duplikáció-szűréssel), illetve
-> közvetlen olvasása, IP-pivot a webes kérésekre, és a Security-napló alábbi eseményei:
+> közvetlen olvasása, IP-pivot a webes kérésekre, és az alábbi események:
 >
 > - bejelentkezés: 4624, 4625, 4634, 4647, 4648, 4672
 > - fiókok életciklusa: 4720, 4722, 4725, 4726, 4738, 4781 (átnevezés után a régi és az új
@@ -23,6 +23,12 @@ forrásból, és minden eseménynél jelzi, hogy a fiók **szereplő** volt (ő 
 > - jelszó: 4723, 4724; zárolás: 4740, 4767
 > - csoporttagság: 4728/4729, 4732/4733, 4756/4757; a kiemelt csoportba vétel (Domain Admins,
 >   Schema Admins, Enterprise Admins, Administrators) magas súlyosságú
+> - Kerberos és NTLM: 4768, 4769, 4771, 4776 (sikertelen kéréseknél a hibakód szövegesen)
+> - egyéb Security: 1102 (naplótörlés), 4688 (folyamatindítás), 4698 (ütemezett feladat)
+> - System: 7045 (szolgáltatástelepítés), 104 (naplótörlés)
+> - RDP: LocalSessionManager 21/23/24/25, RemoteConnectionManager 1149
+> - PowerShell 4104: a több részre bontott szkriptblokkok összefűzve; a hiányos blokkok
+>   jelölve
 > - IIS W3C-naplók: a mezősorrend mindig a `#Fields:` sorból, akár fájlon belül változva
 
 ## Gyors kezdés (fejlesztői telepítés)
@@ -54,12 +60,15 @@ Az `ingest` minden fájl SHA-256 hash-ét rögzíti feldolgozás előtt, és a m
 
 ### Kipróbálás a saját gépeden
 
-A saját Windows-gépeden is ki tudod próbálni. A Security-napló kimentéséhez rendszergazdai
+A saját Windows-gépeden is ki tudod próbálni. A naplók kimentéséhez rendszergazdai
 PowerShell kell:
 
 ```powershell
 mkdir C:\usertrail-proba
 wevtutil epl Security C:\usertrail-proba\Security.evtx
+wevtutil epl System C:\usertrail-proba\System.evtx
+wevtutil epl Microsoft-Windows-PowerShell/Operational C:\usertrail-proba\PowerShell.evtx
+wevtutil epl Microsoft-Windows-TerminalServices-LocalSessionManager/Operational C:\usertrail-proba\RDP-LSM.evtx
 ```
 
 Ezután (nem kell rendszergazdai jog):

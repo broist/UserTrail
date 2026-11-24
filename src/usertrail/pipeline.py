@@ -8,7 +8,7 @@ from datetime import tzinfo
 from pathlib import Path
 
 from usertrail.models import TimelineEvent
-from usertrail.parsers import parse_record
+from usertrail.parsers import Dispatcher
 from usertrail.parsers.evtx_reader import ReadStats, read_evtx
 from usertrail.parsers.iis import is_iis_log, read_iis
 
@@ -61,10 +61,13 @@ def iter_events(
             if source.kind == KIND_IIS:
                 yield from read_iis(source.path, stats, iis_tz)
                 continue
+            dispatcher = Dispatcher()
             for record in read_evtx(source.path, stats):
                 try:
-                    yield from parse_record(record)
+                    yield from dispatcher.parse(record)
                 except Exception as exc:  # egy hibás rekord sosem állíthatja le a futást
                     stats.add_error(f"{record.raw_ref}: feldolgozási hiba: {exc}")
+            # A fájl végén függőben maradt (pl. hiányos PowerShell-) események kiadása.
+            yield from dispatcher.finish()
         except OSError as exc:
             stats.add_error(f"{source.path}: nem nyitható meg: {exc}")

@@ -37,6 +37,8 @@ class RawRecord:
     data: dict[str, Any]
     # A System.Keywords hexa szövegként, pl. "0x8020000000000000" (audit siker/kudarc).
     keywords: str | None = None
+    # A System.Level (pl. 3 = figyelmeztetés; a PowerShell a gyanús szkripteket így jelöli).
+    level: int | None = None
 
     @property
     def raw_ref(self) -> str:
@@ -58,15 +60,19 @@ class ReadStats:
 
 
 def _scalar(value: Any) -> Any:
-    """A ``{"#text": ...}`` csomópontok kibontása, a helyőrzők None-ná alakítása."""
+    """A ``{"#text": ...}`` csomópontok kibontása, a helyőrzők None-ná alakítása.
+
+    A szöveges értékeket nem módosítja (a szóközöket sem vágja le), mert az a
+    bizonyíték megváltoztatása lenne: pl. a darabolt PowerShell-szkriptek részeinek
+    határán a szóköz a szkript része.
+    """
     if isinstance(value, Mapping):
         if "#text" in value:
             value = value["#text"]
         else:
             return {k: _scalar(v) for k, v in value.items() if k != "#attributes"}
-    if isinstance(value, str):
-        stripped = value.strip()
-        return None if stripped in ("", "-") else stripped
+    if isinstance(value, str) and value.strip() in ("", "-"):
+        return None
     return value
 
 
@@ -161,7 +167,17 @@ def record_from_json(
         user_sid=str(user_sid).upper() if user_sid else None,
         data=data,
         keywords=str(system["Keywords"]) if system.get("Keywords") is not None else None,
+        level=_optional_int(system.get("Level")),
     )
+
+
+def _optional_int(value: Any) -> int | None:
+    if isinstance(value, Mapping):
+        value = value.get("#text")
+    try:
+        return int(value) if value is not None else None
+    except (TypeError, ValueError):
+        return None
 
 
 def read_evtx(path: Path, stats: ReadStats) -> Iterator[RawRecord]:

@@ -49,6 +49,39 @@ MESSAGES: dict[str, dict[str, str]] = {
             "{actor} removed {member} from {scope_text} group {group}{privileged_text}"
         ),
         "web_request": "Web request: {method} {uri} → {status}, client: {src}",
+        "kerberos_tgt": "Kerberos TGT issued for {target}, from {src}",
+        "kerberos_tgt_failure": (
+            "Kerberos TGT request failed for {target}, from {src}: {kerb_status_text}"
+        ),
+        "kerberos_service_ticket": (
+            "Kerberos service ticket for {target} to {ServiceName}, from {src}"
+        ),
+        "kerberos_service_ticket_failure": (
+            "Kerberos service ticket request failed for {target} to {ServiceName}, "
+            "from {src}: {kerb_status_text}"
+        ),
+        "kerberos_preauth_failed": (
+            "Kerberos pre-authentication failed for {target}, from {src}: {kerb_status_text}"
+        ),
+        "ntlm_validation": "NTLM credential validation for {target}, workstation: {Workstation}",
+        "ntlm_validation_failure": (
+            "NTLM credential validation failed for {target}, workstation: {Workstation}: "
+            "{status_text}"
+        ),
+        "audit_log_cleared": "{actor} cleared the Security audit log",
+        "log_cleared": "{actor} cleared the {Channel} log",
+        "process_created": "{actor} started process {NewProcessName}: {command}",
+        "scheduled_task_created": "{actor} created scheduled task {TaskName}",
+        "service_installed": (
+            "Service installed: {ServiceName} – {ImagePath} "
+            "(account: {AccountName}, installed by: {actor})"
+        ),
+        "rdp_logon": "RDP logon of {target} from {src} (session {SessionID})",
+        "rdp_logoff": "RDP logoff of {target} (session {SessionID})",
+        "rdp_disconnect": "RDP session of {target} disconnected (session {SessionID}, from {src})",
+        "rdp_reconnect": "RDP session of {target} reconnected from {src} (session {SessionID})",
+        "rdp_auth_success": "RDP network authentication succeeded for {target} from {src}",
+        "script_block": "PowerShell script block run by {actor}: {preview}",
         "web_request_user": "Web request by {actor}: {method} {uri} → {status}, client: {src}",
     },
     "hu": {
@@ -87,6 +120,42 @@ MESSAGES: dict[str, dict[str, str]] = {
             "{privileged_text}"
         ),
         "web_request": "Webes kérés: {method} {uri} → {status}, kliens: {src}",
+        "kerberos_tgt": "Kerberos TGT kiadva: {target}, forrás: {src}",
+        "kerberos_tgt_failure": (
+            "Sikertelen Kerberos TGT-kérés: {target}, forrás: {src} – {kerb_status_text}"
+        ),
+        "kerberos_service_ticket": (
+            "Kerberos szolgáltatásjegy: {target} → {ServiceName}, forrás: {src}"
+        ),
+        "kerberos_service_ticket_failure": (
+            "Sikertelen Kerberos szolgáltatásjegy-kérés: {target} → {ServiceName}, "
+            "forrás: {src} – {kerb_status_text}"
+        ),
+        "kerberos_preauth_failed": (
+            "Sikertelen Kerberos előhitelesítés: {target}, forrás: {src} – {kerb_status_text}"
+        ),
+        "ntlm_validation": "NTLM-hitelesítés ellenőrzése: {target}, munkaállomás: {Workstation}",
+        "ntlm_validation_failure": (
+            "Sikertelen NTLM-hitelesítés: {target}, munkaállomás: {Workstation} – {status_text}"
+        ),
+        "audit_log_cleared": "{actor} törölte a Security naplót",
+        "log_cleared": "{actor} törölte a(z) {Channel} naplót",
+        "process_created": "{actor} folyamatot indított: {NewProcessName} – {command}",
+        "scheduled_task_created": "{actor} ütemezett feladatot hozott létre: {TaskName}",
+        "service_installed": (
+            "Új szolgáltatás telepítve: {ServiceName} – {ImagePath} "
+            "(fiók: {AccountName}, telepítő: {actor})"
+        ),
+        "rdp_logon": "RDP-bejelentkezés: {target}, forrás: {src} ({SessionID}. munkamenet)",
+        "rdp_logoff": "RDP-kijelentkezés: {target} ({SessionID}. munkamenet)",
+        "rdp_disconnect": (
+            "RDP-munkamenet bontva: {target} ({SessionID}. munkamenet, forrás: {src})"
+        ),
+        "rdp_reconnect": (
+            "RDP-munkamenet újracsatlakozva: {target}, forrás: {src} ({SessionID}. munkamenet)"
+        ),
+        "rdp_auth_success": "Sikeres RDP hálózati hitelesítés: {target}, forrás: {src}",
+        "script_block": "PowerShell-szkriptblokk ({actor}): {preview}",
         "web_request_user": "Webes kérés ({actor}): {method} {uri} → {status}, kliens: {src}",
     },
 }
@@ -154,6 +223,32 @@ STATUS_CODES: dict[str, dict[str, str]] = {
 }
 
 # Az eredmény, a csoport-hatókör és a kiemelt csoport szövegei.
+# Kerberos-hibakódok (4768/4769 Status, 4771 Status/FailureCode), normalizált "0x.." kulccsal.
+KERBEROS_CODES: dict[str, dict[str, str]] = {
+    "en": {
+        "0x6": "unknown principal (account does not exist)",
+        "0x7": "service principal not found",
+        "0xc": "policy restriction (e.g. workstation or logon hours)",
+        "0x12": "account disabled, locked out or expired",
+        "0x17": "password expired",
+        "0x18": "wrong password",
+        "0x1f": "integrity check failed",
+        "0x20": "ticket expired",
+        "0x25": "clock skew too great",
+    },
+    "hu": {
+        "0x6": "nem létező fiók",
+        "0x7": "a szolgáltatás nem található",
+        "0xc": "házirend-korlátozás (pl. munkaállomás vagy bejelentkezési idő)",
+        "0x12": "a fiók letiltva, zárolva vagy lejárt",
+        "0x17": "lejárt jelszó",
+        "0x18": "hibás jelszó",
+        "0x1f": "integritás-ellenőrzési hiba",
+        "0x20": "lejárt jegy",
+        "0x25": "túl nagy óraeltérés",
+    },
+}
+
 DERIVED_TEXT: dict[str, dict[str, str]] = {
     "en": {
         "result.success": "succeeded",
@@ -228,6 +323,29 @@ def logon_type_text(value: Any, lang: str) -> str:
     return f"{code} {text}" if text else str(code)
 
 
+def normalize_kerberos_status(value: Any) -> str | None:
+    """Kerberos-hibakód normalizálása rövid, kisbetűs hexa alakra (pl. ``0x18``)."""
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return hex(value)
+    text = str(value).strip()
+    if not text or text == "-":
+        return None
+    try:
+        number = int(text, 16) if text.lower().startswith("0x") else int(text)
+    except ValueError:
+        return text
+    return hex(number)
+
+
+def kerberos_status_text(code: str | None, lang: str) -> str:
+    if code is None:
+        return "-"
+    text = KERBEROS_CODES[_lang(lang)].get(code)
+    return f"{text} ({code})" if text else code
+
+
 def normalize_status(value: Any) -> str | None:
     """NTSTATUS-érték (egész szám vagy hexa szöveg) normalizálása ``0xXXXXXXXX`` alakra."""
     if value is None:
@@ -266,6 +384,8 @@ def render(key: str, params: Mapping[str, Any], lang: str = DEFAULT_LANG) -> str
         values["logon_type_text"] = logon_type_text(params["LogonType"], lang)
     if "Status" in params or "SubStatus" in params:
         values["status_text"] = status_text(params.get("Status"), params.get("SubStatus"), lang)
+    if "KerberosStatus" in params:
+        values["kerb_status_text"] = kerberos_status_text(params["KerberosStatus"], lang)
     derived = DERIVED_TEXT[lang]
     if "Result" in params:
         values["result_text"] = derived[f"result.{params['Result'] or 'unknown'}"]

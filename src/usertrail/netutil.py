@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ipaddress
 from typing import Any
 
 _PLACEHOLDERS = {"", "-"}
@@ -9,7 +10,10 @@ _LOCAL_ADDRESSES = {"::1", "127.0.0.1"}
 
 
 def normalize_ip(value: Any) -> str | None:
-    """Megtisztított IP-cím; az IPv4-re leképezett ``::ffff:`` előtagot levágja."""
+    """Megtisztított IP-cím; az IPv4-re leképezett ``::ffff:`` előtagot levágja.
+
+    Ha az érték nem IP-cím, None-t ad vissza.
+    """
     if value is None:
         return None
     text = str(value).strip()
@@ -17,7 +21,12 @@ def normalize_ip(value: Any) -> str | None:
         return None
     if text.lower().startswith("::ffff:"):
         text = text[7:]
-    return text or None
+    try:
+        ipaddress.ip_address(text)
+    except ValueError:
+        # Nem IP-cím (pl. az RDP-naplók "LOCAL" értéke vagy egy gépnév).
+        return None
+    return text
 
 
 def is_external_ip(ip: str | None) -> bool:

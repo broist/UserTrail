@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from usertrail.models import TimelineEvent
-from usertrail.parsers import parse_record
+from usertrail.parsers import Dispatcher
 from usertrail.parsers.evtx_reader import RawRecord, record_from_json
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -25,7 +25,10 @@ def load_records(name: str, source_path: str = "Security.evtx") -> list[RawRecor
 
 
 def parse_all(records: list[RawRecord]) -> list[TimelineEvent]:
-    return [event for record in records for event in parse_record(record)]
+    dispatcher = Dispatcher()
+    events = [event for record in records for event in dispatcher.parse(record)]
+    events.extend(dispatcher.finish())
+    return events
 
 
 def by_record(events: list[TimelineEvent], record_id: int) -> TimelineEvent:

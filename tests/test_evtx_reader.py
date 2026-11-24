@@ -115,3 +115,10 @@ def test_user_data_merged_into_record() -> None:
 def test_invalid_event_id_message_is_hungarian() -> None:
     with pytest.raises(ValueError, match="érvénytelen EventID"):
         record_from_json(_doc(EventID="abc"), "f", 1)
+
+
+def test_field_values_are_not_stripped() -> None:
+    # A bizonyíték szövegét nem módosítjuk: a szóközök a mező részei maradnak.
+    data = flatten_event_data({"ScriptBlockText": "  első rész ", "LogonProcessName": "User32 "})
+    assert data == {"ScriptBlockText": "  első rész ", "LogonProcessName": "User32 "}
+    assert flatten_event_data({"X": "  -  "}) == {"X": None}
