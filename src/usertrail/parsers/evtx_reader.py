@@ -35,6 +35,8 @@ class RawRecord:
     computer: str | None
     user_sid: str | None
     data: dict[str, Any]
+    # A System.Keywords hexa szövegként, pl. "0x8020000000000000" (audit siker/kudarc).
+    keywords: str | None = None
 
     @property
     def raw_ref(self) -> str:
@@ -155,6 +157,7 @@ def record_from_json(
         computer=str(computer) if computer else None,
         user_sid=str(user_sid).upper() if user_sid else None,
         data=data,
+        keywords=str(system["Keywords"]) if system.get("Keywords") is not None else None,
     )
 
 

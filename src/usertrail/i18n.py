@@ -28,6 +28,26 @@ MESSAGES: dict[str, dict[str, str]] = {
             "{actor} used the explicit credentials of {target} to access {TargetServerName}"
         ),
         "special_privileges": "Special privileges assigned to the new logon of {actor}",
+        "account_created": "{actor} created account {target}",
+        "account_enabled": "{actor} enabled account {target}",
+        "account_disabled": "{actor} disabled account {target}",
+        "account_deleted": "{actor} deleted account {target}",
+        "account_changed": "{actor} changed account {target} (changed: {changed})",
+        "account_renamed": ("{actor} renamed account {OldTargetUserName} to {NewTargetUserName}"),
+        "password_change_attempt": (
+            "{actor} attempted to change the password of {target} ({result_text})"
+        ),
+        "password_reset": "{actor} reset the password of {target} ({result_text})",
+        "account_locked": (
+            "Account {target} was locked out; failed attempts came from {CallerComputerName}"
+        ),
+        "account_unlocked": "{actor} unlocked account {target}",
+        "group_member_added": (
+            "{actor} added {member} to {scope_text} group {group}{privileged_text}"
+        ),
+        "group_member_removed": (
+            "{actor} removed {member} from {scope_text} group {group}{privileged_text}"
+        ),
     },
     "hu": {
         "logon_success": "Sikeres bejelentkezés: {target} ({logon_type_text}), forrás: {src}",
@@ -41,6 +61,29 @@ MESSAGES: dict[str, dict[str, str]] = {
             "{TargetServerName} eléréséhez"
         ),
         "special_privileges": "Kiemelt jogosultságok az új bejelentkezéshez: {actor}",
+        "account_created": "{actor} létrehozta a(z) {target} fiókot",
+        "account_enabled": "{actor} engedélyezte a(z) {target} fiókot",
+        "account_disabled": "{actor} letiltotta a(z) {target} fiókot",
+        "account_deleted": "{actor} törölte a(z) {target} fiókot",
+        "account_changed": "{actor} módosította a(z) {target} fiókot (változott: {changed})",
+        "account_renamed": (
+            "{actor} átnevezte a(z) {OldTargetUserName} fiókot, új neve: {NewTargetUserName}"
+        ),
+        "password_change_attempt": (
+            "{actor} megkísérelte módosítani a(z) {target} jelszavát ({result_text})"
+        ),
+        "password_reset": "{actor} visszaállította a(z) {target} jelszavát ({result_text})",
+        "account_locked": (
+            "A(z) {target} fiók zárolva; a hibás próbálkozások forrása: {CallerComputerName}"
+        ),
+        "account_unlocked": "{actor} feloldotta a(z) {target} fiók zárolását",
+        "group_member_added": (
+            "{actor} hozzáadta {member} tagot a(z) {group} {scope_text} csoporthoz{privileged_text}"
+        ),
+        "group_member_removed": (
+            "{actor} eltávolította {member} tagot a(z) {group} {scope_text} csoportból"
+            "{privileged_text}"
+        ),
     },
 }
 
@@ -103,6 +146,28 @@ STATUS_CODES: dict[str, dict[str, str]] = {
         "0xC0000193": "lejárt fiók",
         "0xC0000224": "jelszócsere szükséges",
         "0xC0000234": "zárolt fiók",
+    },
+}
+
+# Az eredmény, a csoport-hatókör és a kiemelt csoport szövegei.
+DERIVED_TEXT: dict[str, dict[str, str]] = {
+    "en": {
+        "result.success": "succeeded",
+        "result.failure": "failed",
+        "result.unknown": "result unknown",
+        "scope.global": "global",
+        "scope.local": "local",
+        "scope.universal": "universal",
+        "privileged": " – PRIVILEGED GROUP: {name}",
+    },
+    "hu": {
+        "result.success": "sikeres",
+        "result.failure": "sikertelen",
+        "result.unknown": "eredmény ismeretlen",
+        "scope.global": "globális",
+        "scope.local": "helyi",
+        "scope.universal": "univerzális",
+        "privileged": " – KIEMELT CSOPORT: {name}",
     },
 }
 
@@ -195,6 +260,16 @@ def render(key: str, params: Mapping[str, Any], lang: str = DEFAULT_LANG) -> str
         values["logon_type_text"] = logon_type_text(params["LogonType"], lang)
     if "Status" in params or "SubStatus" in params:
         values["status_text"] = status_text(params.get("Status"), params.get("SubStatus"), lang)
+    derived = DERIVED_TEXT[lang]
+    if "Result" in params:
+        values["result_text"] = derived[f"result.{params['Result'] or 'unknown'}"]
+    if "GroupScope" in params:
+        scope = params["GroupScope"]
+        values["scope_text"] = derived.get(f"scope.{scope}", str(scope or "-"))
+        privileged = params.get("PrivilegedGroup")
+        values["privileged_text"] = (
+            derived["privileged"].format(name=privileged) if privileged else ""
+        )
     if template is None:
         shown = ", ".join(f"{k}={v}" for k, v in values.items())
         return f"{key} ({shown})" if shown else key

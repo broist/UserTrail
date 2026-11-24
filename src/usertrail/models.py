@@ -119,6 +119,8 @@ class TimelineEvent:
     details: dict[str, Any] = field(default_factory=dict)
     severity: Severity = Severity.INFO
     raw_ref: str = ""
+    # A célfiók további nevei ugyanabban az eseményben (pl. 4781-nél a régi név).
+    aliases: tuple[Identity, ...] = ()
 
     def __post_init__(self) -> None:
         if self.timestamp_utc.tzinfo is None:

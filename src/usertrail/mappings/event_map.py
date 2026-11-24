@@ -17,6 +17,8 @@ from usertrail.models import Category, Severity
 IdentityFields: TypeAlias = tuple[str | None, str | None, str | None]
 SUBJECT: IdentityFields = ("SubjectUserName", "SubjectDomainName", "SubjectUserSid")
 TARGET: IdentityFields = ("TargetUserName", "TargetDomainName", "TargetUserSid")
+# A fiókkezelési eseményekben (4720–4781) a célfiók SID-mezője TargetSid.
+ACCOUNT: IdentityFields = ("TargetUserName", "TargetDomainName", "TargetSid")
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,6 +105,83 @@ EVENT_SPECS: tuple[EventSpec, ...] = (
         Category.PRIVILEGE,
         target=None,
         detail_fields=("PrivilegeList", "SubjectLogonId"),
+    ),
+    # --- Security: fiókok életciklusa ---------------------------------------------
+    EventSpec(
+        "Security",
+        4720,
+        "account_created",
+        Category.ACCOUNT_LIFECYCLE,
+        Severity.LOW,
+        target=ACCOUNT,
+        detail_fields=("SamAccountName", "DisplayName", "UserPrincipalName", "UserAccountControl"),
+    ),
+    EventSpec("Security", 4722, "account_enabled", Category.ACCOUNT_LIFECYCLE, target=ACCOUNT),
+    EventSpec(
+        "Security",
+        4725,
+        "account_disabled",
+        Category.ACCOUNT_LIFECYCLE,
+        Severity.LOW,
+        target=ACCOUNT,
+    ),
+    EventSpec(
+        "Security",
+        4726,
+        "account_deleted",
+        Category.ACCOUNT_LIFECYCLE,
+        Severity.MEDIUM,
+        target=ACCOUNT,
+    ),
+    # A változott attribútumokat a 4738-as kezelőfüggvény gyűjti össze.
+    EventSpec("Security", 4738, "account_changed", Category.ACCOUNT_LIFECYCLE, target=ACCOUNT),
+    EventSpec(
+        "Security",
+        4781,
+        "account_renamed",
+        Category.ACCOUNT_LIFECYCLE,
+        Severity.LOW,
+        target=("NewTargetUserName", "TargetDomainName", "TargetSid"),
+        detail_fields=("OldTargetUserName", "NewTargetUserName"),
+    ),
+    # --- Security: jelszó ------------------------------------------------------------
+    EventSpec("Security", 4723, "password_change_attempt", Category.PASSWORD, target=ACCOUNT),
+    EventSpec(
+        "Security", 4724, "password_reset", Category.PASSWORD, Severity.MEDIUM, target=ACCOUNT
+    ),
+    # --- Security: zárolás -----------------------------------------------------------
+    EventSpec(
+        "Security",
+        4740,
+        "account_locked",
+        Category.LOCKOUT,
+        Severity.MEDIUM,
+        actor=None,  # a Subject a zárolást végrehajtó tartományvezérlő gépfiókja
+        # A 4740 TargetDomainName mezője valójában a hívó gép neve (Caller Computer Name).
+        target=("TargetUserName", None, "TargetSid"),
+    ),
+    EventSpec("Security", 4767, "account_unlocked", Category.LOCKOUT, Severity.LOW, target=ACCOUNT),
+    # --- Security: csoporttagság -----------------------------------------------------
+    # A TargetUserName itt a csoport neve; a tagot a kezelőfüggvény állítja be a
+    # MemberSid (és ha nincs, a MemberName DN) alapján.
+    *(
+        EventSpec(
+            "Security",
+            event_id,
+            action,
+            Category.GROUP_MEMBERSHIP,
+            Severity.LOW,
+            target=None,
+            detail_fields=("MemberName", "MemberSid"),
+        )
+        for event_id, action in (
+            (4728, "group_member_added"),
+            (4729, "group_member_removed"),
+            (4732, "group_member_added"),
+            (4733, "group_member_removed"),
+            (4756, "group_member_added"),
+            (4757, "group_member_removed"),
+        )
     ),
 )
 

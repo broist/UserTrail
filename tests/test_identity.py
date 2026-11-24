@@ -8,6 +8,7 @@ from usertrail.identity import (
     is_machine_account,
     make_identity,
     parse_account,
+    privileged_group,
     well_known_label,
 )
 from usertrail.models import Identity
@@ -83,3 +84,35 @@ def test_query_matches_name_upn_and_sid_via_sid_map() -> None:
 def test_query_flags() -> None:
     assert IdentityQuery.build().is_empty
     assert IdentityQuery.build("WS-042$").targets_machine_account
+
+
+@pytest.mark.parametrize(
+    ("sid", "expected"),
+    [
+        ("S-1-5-21-1-2-3-512", "Domain Admins"),
+        ("s-1-5-21-1-2-3-518", "Schema Admins"),
+        ("S-1-5-21-1-2-3-519", "Enterprise Admins"),
+        ("S-1-5-32-544", "Administrators"),
+        ("S-1-5-21-1-2-3-513", None),  # Domain Users
+        ("S-1-5-32-555", None),  # Remote Desktop Users
+        ("S-1-5-21-1-2-3-1512", None),
+        (None, None),
+    ],
+)
+def test_privileged_group(sid: str | None, expected: str | None) -> None:
+    assert privileged_group(sid) == expected
+
+
+def test_rename_chain_expands_over_several_steps() -> None:
+    # a -> b átnevezés (SID1), és egy SID nélküli régi név nem keveredik bele.
+    sid_map = SidMap()
+    sid_map.learn_all(
+        [
+            make_identity("a", "CEG", "S-1-5-21-1-2-3-1001"),
+            make_identity("b", "CEG", "S-1-5-21-1-2-3-1001"),
+            make_identity("c", "CEG", "S-1-5-21-1-2-3-1002"),
+        ]
+    )
+    query = IdentityQuery.build("a", sid_map=sid_map)
+    assert query.names == frozenset({"a", "b"})
+    assert query.sids == frozenset({"S-1-5-21-1-2-3-1001"})

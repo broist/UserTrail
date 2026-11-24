@@ -1,0 +1,518 @@
+[
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4720,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-01T08:00:00Z"
+          }
+        },
+        "EventRecordID": 201,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserName": "kovacs.janos",
+        "TargetDomainName": "CEG",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1200",
+        "SubjectUserName": "rendszergazda",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x51a2b",
+        "SamAccountName": "kovacs.janos",
+        "DisplayName": "Kovács János",
+        "UserPrincipalName": "kovacs.janos@ceg.hu",
+        "UserAccountControl": "%%2080"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4722,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-01T08:00:01Z"
+          }
+        },
+        "EventRecordID": 202,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserName": "kovacs.janos",
+        "TargetDomainName": "CEG",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1200",
+        "SubjectUserName": "rendszergazda",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x51a2b"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4738,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-01T08:00:02Z"
+          }
+        },
+        "EventRecordID": 203,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserName": "kovacs.janos",
+        "TargetDomainName": "CEG",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1200",
+        "SubjectUserName": "rendszergazda",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x51a2b",
+        "SamAccountName": "-",
+        "HomeDirectory": "-",
+        "HomePath": "-",
+        "ScriptPath": "-",
+        "ProfilePath": "-",
+        "UserWorkstations": "-",
+        "PasswordLastSet": "-",
+        "AccountExpires": "-",
+        "PrimaryGroupId": "-",
+        "AllowedToDelegateTo": "-",
+        "UserParameters": "-",
+        "SidHistory": "-",
+        "LogonHours": "-",
+        "DisplayName": "Kovács János",
+        "UserPrincipalName": "kovacs.janos@ceg.hu",
+        "UserAccountControl": "%%2048",
+        "OldUacValue": "0x15",
+        "NewUacValue": "0x10",
+        "Dummy": "-"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4724,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-01T08:00:03Z"
+          }
+        },
+        "EventRecordID": 204,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserName": "kovacs.janos",
+        "TargetDomainName": "CEG",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1200",
+        "SubjectUserName": "rendszergazda",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x51a2b"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4723,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-02T07:30:00Z"
+          }
+        },
+        "EventRecordID": 205,
+        "Keywords": "0x8010000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserName": "kovacs.janos",
+        "TargetDomainName": "CEG",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserName": "kovacs.janos",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x3e7a1f"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4728,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-03T10:00:00Z"
+          }
+        },
+        "EventRecordID": 206,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1200",
+        "SubjectUserName": "rendszergazda",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x51a2b",
+        "MemberName": "CN=Kovács János,OU=Users,DC=ceg,DC=local",
+        "MemberSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "TargetUserName": "Domain Admins",
+        "TargetDomainName": "CEG",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-512"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4732,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-03T10:05:00Z"
+          }
+        },
+        "EventRecordID": 207,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1200",
+        "SubjectUserName": "rendszergazda",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x51a2b",
+        "MemberName": "-",
+        "MemberSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "TargetUserName": "Remote Desktop Users",
+        "TargetDomainName": "Builtin",
+        "TargetSid": "S-1-5-32-555"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4729,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-03T12:00:00Z"
+          }
+        },
+        "EventRecordID": 208,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1200",
+        "SubjectUserName": "rendszergazda",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x51a2b",
+        "MemberName": "CN=Kovács János,OU=Users,DC=ceg,DC=local",
+        "MemberSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "TargetUserName": "Domain Admins",
+        "TargetDomainName": "CEG",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-512"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4740,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-04T09:15:00Z"
+          }
+        },
+        "EventRecordID": 209,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserName": "kovacs.janos",
+        "TargetDomainName": "WS-042",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserSid": "S-1-5-18",
+        "SubjectUserName": "DC01$",
+        "SubjectDomainName": "CEG"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4767,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-04T09:30:00Z"
+          }
+        },
+        "EventRecordID": 210,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserName": "kovacs.janos",
+        "TargetDomainName": "CEG",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1200",
+        "SubjectUserName": "rendszergazda",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x51a2b"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4781,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-05T08:00:00Z"
+          }
+        },
+        "EventRecordID": 211,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1200",
+        "SubjectUserName": "rendszergazda",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x51a2b",
+        "OldTargetUserName": "kovacs.janos",
+        "NewTargetUserName": "janos.kovacs",
+        "TargetDomainName": "CEG",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "Privileges": "-"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4624,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-05T08:30:00Z"
+          }
+        },
+        "EventRecordID": 212,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-5-18",
+        "SubjectUserName": "DC01$",
+        "SubjectDomainName": "CEG",
+        "TargetUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "TargetUserName": "janos.kovacs",
+        "TargetDomainName": "CEG",
+        "LogonType": 3,
+        "IpAddress": "10.0.0.5",
+        "AuthenticationPackageName": "Kerberos"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4725,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-06T16:00:00Z"
+          }
+        },
+        "EventRecordID": 213,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserName": "janos.kovacs",
+        "TargetDomainName": "CEG",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1200",
+        "SubjectUserName": "rendszergazda",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x51a2b"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4726,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-07T16:00:00Z"
+          }
+        },
+        "EventRecordID": 214,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserName": "janos.kovacs",
+        "TargetDomainName": "CEG",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1200",
+        "SubjectUserName": "rendszergazda",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x51a2b"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4728,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-03T11:00:00Z"
+          }
+        },
+        "EventRecordID": 215,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1200",
+        "SubjectUserName": "rendszergazda",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x51a2b",
+        "MemberName": "CN=Nagy Péter,OU=Users,DC=ceg,DC=local",
+        "MemberSid": "S-1-5-21-1111111111-2222222222-3333333333-1300",
+        "TargetUserName": "Domain Admins",
+        "TargetDomainName": "CEG",
+        "TargetSid": "S-1-5-21-1111111111-2222222222-3333333333-512"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {
+          "#attributes": {
+            "Name": "Microsoft-Windows-Security-Auditing"
+          }
+        },
+        "EventID": 4733,
+        "TimeCreated": {
+          "#attributes": {
+            "SystemTime": "2026-11-03T11:30:00Z"
+          }
+        },
+        "EventRecordID": 216,
+        "Keywords": "0x8020000000000000",
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1200",
+        "SubjectUserName": "rendszergazda",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x51a2b",
+        "MemberName": "CN=Nagy Péter,OU=Users,DC=ceg,DC=local",
+        "MemberSid": "S-1-5-21-1111111111-2222222222-3333333333-1300",
+        "TargetUserName": "Administrators",
+        "TargetDomainName": "Builtin",
+        "TargetSid": "S-1-5-32-544"
+      }
+    }
+  }
+]

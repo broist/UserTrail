@@ -13,9 +13,15 @@ eseményeket. A UserTrail identitásközpontú: egy fiók teljes történetét r
 forrásból, és minden eseménynél jelzi, hogy a fiók **szereplő** volt (ő csinálta) vagy
 **célpont** (vele csinálták).
 
-> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–2. mérföldkő: az EVTX-fájlok közvetlen
-> olvasása és a Security bejelentkezési események (4624, 4625, 4634, 4647, 4648, 4672)
-> megjelenítése a konzolon.
+> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–3. mérföldkő: az EVTX-fájlok közvetlen
+> olvasása és a Security-napló alábbi eseményei a konzolon:
+>
+> - bejelentkezés: 4624, 4625, 4634, 4647, 4648, 4672
+> - fiókok életciklusa: 4720, 4722, 4725, 4726, 4738, 4781 (átnevezés után a régi és az új
+>   névvel is megtalálható a teljes előzmény)
+> - jelszó: 4723, 4724; zárolás: 4740, 4767
+> - csoporttagság: 4728/4729, 4732/4733, 4756/4757; a kiemelt csoportba vétel (Domain Admins,
+>   Schema Admins, Enterprise Admins, Administrators) magas súlyosságú
 
 ## Gyors kezdés (fejlesztői telepítés)
 

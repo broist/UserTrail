@@ -8,7 +8,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
 
-from usertrail.models import WELL_KNOWN_SIDS, Identity
+from usertrail.models import WELL_KNOWN_SIDS, Identity, TimelineEvent
 
 SID_RE = re.compile(r"^S-1-\d+(-\d+)+$", re.IGNORECASE)
 
@@ -16,6 +16,17 @@ _PLACEHOLDERS = {"", "-"}
 # SID-ek, amelyek a Windows-eseményekben „nincs fiók” jelentésűek
 # (pl. 4625 nem létező felhasználónál).
 _EMPTY_SIDS = {"S-1-0-0"}
+# Kiemelt jogosultságú csoportok a SID végén lévő RID alapján (tartományi csoportok).
+PRIVILEGED_DOMAIN_RIDS: dict[str, str] = {
+    "512": "Domain Admins",
+    "518": "Schema Admins",
+    "519": "Enterprise Admins",
+}
+# Beépített helyi csoportok teljes SID-del.
+PRIVILEGED_BUILTIN_SIDS: dict[str, str] = {
+    "S-1-5-32-544": "Administrators",
+}
+
 _WELL_KNOWN_NAMES = {
     "system",
     "local service",
@@ -118,6 +129,18 @@ def well_known_label(identity: Identity | None) -> str | None:
     return None
 
 
+def privileged_group(sid: str | None) -> str | None:
+    """A kiemelt csoport angol neve, ha a SID ilyen csoporté (pl. ``Domain Admins``)."""
+    if not sid:
+        return None
+    sid = sid.strip().upper()
+    if sid in PRIVILEGED_BUILTIN_SIDS:
+        return PRIVILEGED_BUILTIN_SIDS[sid]
+    if sid.startswith("S-1-5-21-"):
+        return PRIVILEGED_DOMAIN_RIDS.get(sid.rsplit("-", 1)[1])
+    return None
+
+
 class SidMap:
     """Kétirányú SID ↔ fióknév térkép, amelyet a feldolgozott eseményekből tanul."""
 
@@ -135,11 +158,47 @@ class SidMap:
         for identity in identities:
             self.learn(identity)
 
+    def learn_event(self, event: TimelineEvent) -> None:
+        """Egy esemény összes identitásának megtanulása, az aliasokat is beleértve.
+
+        A 4781-es átnevezésnél a régi név aliasként érkezik ugyanazzal a SID-del, így a
+        régi és az új név ugyanahhoz az identitáshoz kötődik.
+        """
+        self.learn(event.actor)
+        self.learn(event.target)
+        self.learn_all(event.aliases)
+
+    def display_name(self, sid: str) -> str | None:
+        """A SID-hez tanult név (átnevezés után több név ``/`` jellel elválasztva)."""
+        names = self.names_for_sid(sid)
+        return " / ".join(sorted(names)) if names else None
+
     def names_for_sid(self, sid: str) -> set[str]:
         return set(self._names_by_sid.get(sid.upper(), set()))
 
     def sids_for_name(self, name: str) -> set[str]:
         return set(self._sids_by_name.get(name.casefold(), set()))
+
+
+def resolve_sid_only_names(event: TimelineEvent, sid_map: SidMap) -> None:
+    """Csak SID-del szereplő fiókok nevének kitöltése a leírásban a SID-térképből.
+
+    Csak a megjelenítést (``message_params``) módosítja; az esemény identitásai, azaz a
+    naplóban ténylegesen szereplő adatok változatlanok maradnak.
+    """
+    params = event.message_params
+    for key, identity in (("actor", event.actor), ("target", event.target)):
+        if identity is None or identity.name is not None or identity.sid is None:
+            continue
+        name = sid_map.display_name(identity.sid)
+        if name is None:
+            continue
+        shown = f"{name} ({identity.sid})"
+        if params.get(key) == identity.display():
+            params[key] = shown
+        # A csoporteseményeknél a tag külön paraméterben szerepel.
+        if key == "target" and params.get("member") == identity.display():
+            params["member"] = shown
 
 
 @dataclass(frozen=True, slots=True)
@@ -164,12 +223,17 @@ class IdentityQuery:
         if sid:
             sids.add(sid.strip().upper())
         if sid_map is not None:
-            # Bővítés mindkét irányban, hogy a csak SID-es és a csak neves események is
-            # illeszkedjenek.
-            for n in list(names):
-                sids |= sid_map.sids_for_name(n)
-            for s in list(sids):
-                names |= sid_map.names_for_sid(s)
+            # Bővítés mindkét irányban, amíg már nem változik (átnevezésnél a régi név
+            # -> SID -> új név lánc is bejárható), így a csak SID-es és a csak neves
+            # események is illeszkednek.
+            while True:
+                before = (len(names), len(sids))
+                for n in list(names):
+                    sids |= sid_map.sids_for_name(n)
+                for s in list(sids):
+                    names |= sid_map.names_for_sid(s)
+                if (len(names), len(sids)) == before:
+                    break
         return cls(names=frozenset(names), sids=frozenset(sids))
 
     @property

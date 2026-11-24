@@ -39,7 +39,9 @@ def role_of(event: TimelineEvent, flt: TimelineFilter) -> Role | None:
         return None
     if flt.identity is not None and not flt.identity.is_empty:
         as_actor = flt.identity.matches(event.actor)
-        as_target = flt.identity.matches(event.target)
+        as_target = flt.identity.matches(event.target) or any(
+            flt.identity.matches(alias) for alias in event.aliases
+        )
         if as_actor and as_target:
             return Role.BOTH
         if as_actor:

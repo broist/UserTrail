@@ -348,7 +348,11 @@ Mindegyik végén legyenek zöld tesztek, és a funkció legyen kipróbálható 
 
 ## 21. Megvalósítási jegyzetek (fejlesztés közben frissítendő)
 
-- **Állapot:** 1. és 2. mérföldkő kész (váz, CI, EVTX-olvasó, Security hitelesítési események, konzolos kimenet).
+- **Állapot:** 1–3. mérföldkő kész (váz, CI, EVTX-olvasó, Security hitelesítési, fiókkezelési, jelszó-, zárolási és csoporttagsági események, SID-térkép átnevezéssel, konzolos kimenet).
+- **4740 buktató:** a `TargetDomainName` mező itt a hívó gép neve (Caller Computer Name), nem tartomány; a parser `CallerComputerName` néven teszi a details-be, a célfiók tartománya üres marad.
+- **Csoportesemények:** a tag identitása csak a `MemberSid` (a DN-ből kinyert CN megjelenítendő név, nem sAMAccountName, ezért nem kerül a SID-térképbe). A leírásban a tag neve a DN CN-je; ha nincs DN, a SID-térképből feloldott név (`resolve_sid_only_names`), amely csak a megjelenítést módosítja, a tárolt identitást nem.
+- **Átnevezés (4781):** a régi név a `TimelineEvent.aliases` mezőbe kerül ugyanazzal a SID-del; a `SidMap.learn_event` ezt is megtanulja, az `IdentityQuery.build` pedig fixpontig bővít, így a régi és az új névvel is a teljes előzmény megtalálható.
+- **Sikeresség (4723/4724):** a `System.Keywords` auditbitjeiből (`RawRecord.keywords`), a details `Result` mezőjében `success`/`failure`.
 - **Leírás nyelve:** a `TimelineEvent` nem kész szöveget tárol, hanem `message_key` + `message_params` mezőket; a szöveget a `description(lang)` metódus állítja elő a `usertrail/i18n.py` sablonjaiból. Így ugyanaz az adatbázis `--lang hu` és `--lang en` alatt is megjeleníthető.
 - **Közvetlen mód:** amíg nincs SQLite (4. mérföldkő), a `timeline --source <fájl/mappa>` közvetlenül az EVTX-fájlokból dolgozik. Ez a mód a tárolás után is megmarad gyors vizsgálatra.
 - **Szerep 4624/4625-nél:** a bejelentkező fiók `target`, mert a Subject általában a gépfiók/SYSTEM, amely a bejelentkezést lebonyolította.

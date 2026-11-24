@@ -8,7 +8,7 @@ import typer
 from rich.console import Console
 
 from usertrail import __version__, cli_hu
-from usertrail.identity import IdentityQuery, SidMap
+from usertrail.identity import IdentityQuery, SidMap, resolve_sid_only_names
 from usertrail.models import Category, Severity
 from usertrail.parsers.evtx_reader import ReadStats
 from usertrail.pipeline import discover_evtx, iter_events
@@ -170,8 +170,9 @@ def timeline(
 
     sid_map = SidMap()
     for event in events:
-        sid_map.learn(event.actor)
-        sid_map.learn(event.target)
+        sid_map.learn_event(event)
+    for event in events:
+        resolve_sid_only_names(event, sid_map)
 
     identity = IdentityQuery.build(user, sid, sid_map) if (user or sid) else None
     flt = TimelineFilter(
