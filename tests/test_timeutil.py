@@ -61,7 +61,8 @@ def test_resolve_tz() -> None:
 def test_tz_label() -> None:
     assert tz_label(UTC) == "UTC"
     assert tz_label(BUDAPEST) == "Europe/Budapest"
-    assert tz_label(None).startswith("local time")
+    assert tz_label(None).startswith("helyi idő")
+    assert tz_label(None, "en").startswith("local time")
 
 
 def test_parse_bound_dates_cover_whole_day_in_display_zone() -> None:

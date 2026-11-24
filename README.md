@@ -1,40 +1,52 @@
 # UserTrail
 
-**Identity-centric Windows forensic timeline builder.**
+**Felhasználóközpontú Windows forensic idővonal-építő.**
 
-Give UserTrail an Active Directory account name and a pile of collected Windows event
-logs (EVTX) and IIS logs, and it builds one chronological timeline of what happened *to*
-and *by* that account: logons, failed attempts, password changes, lockouts, group
-membership changes, RDP sessions, PowerShell activity, and web requests from the same IP.
+Adj meg a UserTrailnek egy Active Directory fióknevet és a begyűjtött Windows-eseménynaplókat
+(EVTX) és IIS-logokat: egyetlen, időrendi idővonalat kapsz arról, mi történt a fiókkal és mit
+csinált a fiók. Benne vannak a bejelentkezések, a sikertelen próbálkozások, a jelszócserék, a
+zárolások, a csoporttagság-változások, az RDP-munkamenetek, a PowerShell-futtatások és az
+ugyanarról az IP-ről érkező webes kérések.
 
-Tools like Hayabusa, Chainsaw and plaso are event-centric: they hunt for suspicious
-events with rules. UserTrail is identity-centric: it reconstructs the full story of one
-account across sources, marking whether the account was the **actor** or the **target**.
+A Hayabusa, a Chainsaw és a plaso eseményközpontú eszközök: szabályok alapján keresnek gyanús
+eseményeket. A UserTrail identitásközpontú: egy fiók teljes történetét rakja össze több
+forrásból, és minden eseménynél jelzi, hogy a fiók **szereplő** volt (ő csinálta) vagy
+**célpont** (vele csinálták).
 
-> **Status:** early development (pre-alpha). Milestones 1–2 are done: direct EVTX reading
-> and Security logon events (4624, 4625, 4634, 4647, 4648, 4672) on the console.
+> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–2. mérföldkő: az EVTX-fájlok közvetlen
+> olvasása és a Security bejelentkezési események (4624, 4625, 4634, 4647, 4648, 4672)
+> megjelenítése a konzolon.
 
-## Quick start (development)
+## Gyors kezdés (fejlesztői telepítés)
 
 ```bash
 python -m venv .venv
-. .venv/bin/activate            # Windows: .venv\Scripts\activate
+. .venv/bin/activate            # Windowson: .venv\Scripts\activate
 pip install -e ".[dev]"
 
-usertrail timeline --source ./evidence/ --user "CEG\kovacs.janos" --tz Europe/Budapest
-usertrail timeline --source Security.evtx --ip 10.0.0.5 --lang hu
+usertrail timeline --source ./bizonyitekok/ --user "CEG\kovacs.janos" --tz Europe/Budapest
+usertrail timeline --source Security.evtx --ip 10.0.0.5 --lang en
 ```
 
-`--user` accepts `DOMAIN\user`, a UPN (`user@domain`) or a bare name; `--sid` takes a
-SID. Names are matched case-insensitively and linked to SIDs learnt from the logs.
+A `--user` elfogadja a `DOMAIN\felhasználó`, az UPN (`felhasználó@domain`) és a puszta név
+alakot, a `--sid` pedig SID-et vár. A nevek összehasonlítása kis- és nagybetűtől független, és
+az eszköz a naplókból tanult SID-ekhez köti őket, így a csak SID-et tartalmazó események is
+megtalálhatók.
 
-Useful options: `--from` / `--to` (dates in the display time zone; a date covers the
-whole day), `--category AUTHENTICATION,PRIVILEGE`, `--min-severity low`,
-`--include-machine-accounts`, `--lang en|hu`.
+Hasznos kapcsolók:
 
-Source files are always opened read-only.
+| Kapcsoló | Jelentés |
+|---|---|
+| `--from` / `--to` | Időszak a megjelenítési időzónában; egy dátum az egész napot jelenti |
+| `--tz` | Megjelenítési időzóna, pl. `Europe/Budapest` (alapértelmezés: a gép helyi ideje) |
+| `--category` | Kategóriák vesszővel elválasztva, pl. `AUTHENTICATION,PRIVILEGE` |
+| `--min-severity` | Legalacsonyabb súlyosság: `info`, `low`, `medium`, `high` |
+| `--include-machine-accounts` | A `$` végű gépfiókok eseményei is látszanak |
+| `--lang` | A leírások nyelve: `hu` (alapértelmezés) vagy `en` |
 
-## Development
+Az eszköz a forrásfájlokat mindig csak olvasásra nyitja meg.
+
+## Fejlesztés
 
 ```bash
 ruff check . && ruff format --check .
@@ -42,8 +54,8 @@ mypy
 pytest
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add support for a new event ID.
+Új Event ID támogatásának hozzáadásáról a [CONTRIBUTING.md](CONTRIBUTING.md) ír.
 
-## License
+## Licenc
 
-MIT, see [LICENSE](LICENSE).
+MIT, lásd: [LICENSE](LICENSE).

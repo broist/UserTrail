@@ -87,3 +87,22 @@ def test_invalid_category_is_rejected(fake_evtx: Path) -> None:
 def test_not_yet_implemented_commands_exit_2(tmp_path: Path) -> None:
     result = runner.invoke(app, ["users", "--case", str(tmp_path / "case.db")])
     assert result.exit_code == 2
+
+
+def test_default_language_is_hungarian(fake_evtx: Path) -> None:
+    result = runner.invoke(
+        app,
+        ["timeline", "-s", str(fake_evtx), "--user", "kovacs.janos", "--tz", "UTC"],
+        env={"COLUMNS": "250"},
+    )
+    assert result.exit_code == 0, result.output
+    assert "Sikertelen bejelentkezés" in result.output
+    assert "Időzóna: UTC" in result.output
+
+
+def test_unknown_time_zone_message_is_hungarian(fake_evtx: Path) -> None:
+    result = runner.invoke(
+        app, ["timeline", "-s", str(fake_evtx), "--user", "x", "--tz", "Mars/Base"]
+    )
+    assert result.exit_code != 0
+    assert "ismeretlen időzóna" in result.output

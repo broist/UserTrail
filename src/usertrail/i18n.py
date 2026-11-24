@@ -15,7 +15,7 @@ from collections.abc import Mapping
 from typing import Any
 
 SUPPORTED_LANGS = ("en", "hu")
-DEFAULT_LANG = "en"
+DEFAULT_LANG = "hu"
 
 MESSAGES: dict[str, dict[str, str]] = {
     "en": {

@@ -54,11 +54,12 @@ def to_display(dt: datetime, tz: tzinfo | None) -> datetime:
     return ensure_utc(dt).astimezone(tz)
 
 
-def tz_label(tz: tzinfo | None) -> str:
+def tz_label(tz: tzinfo | None, lang: str = "hu") -> str:
     """Human readable name of the display zone, for report headers."""
     if tz is None:
         offset = datetime.now().astimezone().strftime("%z")
-        return f"local time (UTC{offset[:3]}:{offset[3:]} now)"
+        utc = f"UTC{offset[:3]}:{offset[3:]}"
+        return f"helyi idő (most {utc})" if lang == "hu" else f"local time ({utc} now)"
     if tz is UTC:
         return "UTC"
     key = getattr(tz, "key", None)

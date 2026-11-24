@@ -18,7 +18,7 @@ from usertrail.timeutil import parse_bound, resolve_tz
 
 app = typer.Typer(
     name="usertrail",
-    help="Identity-centric Windows forensic timeline builder (EVTX + IIS logs).",
+    help="Felhasználóközpontú Windows forensic idővonal-építő (EVTX- és IIS-naplók).",
     no_args_is_help=True,
     add_completion=False,
 )
@@ -41,11 +41,14 @@ def main(
     version: Annotated[
         bool,
         typer.Option(
-            "--version", callback=_version_callback, is_eager=True, help="Show version and exit."
+            "--version",
+            callback=_version_callback,
+            is_eager=True,
+            help="Kiírja a verziószámot, majd kilép.",
         ),
     ] = False,
 ) -> None:
-    """UserTrail builds one chronological timeline around a single AD account."""
+    """A UserTrail egyetlen AD-fiók köré épít időrendi idővonalat."""
 
 
 def _parse_categories(value: str | None) -> frozenset[Category] | None:
@@ -61,13 +64,14 @@ def _parse_categories(value: str | None) -> frozenset[Category] | None:
         except ValueError:
             valid = ", ".join(c.value for c in Category)
             raise typer.BadParameter(
-                f"unknown category {part!r}; valid: {valid}", param_hint="--category"
+                f"ismeretlen kategória: {part!r}; lehetséges értékek: {valid}",
+                param_hint="--category",
             ) from None
     return frozenset(result)
 
 
 def _not_yet(milestone: int) -> None:
-    err.print(f"[yellow]Not implemented yet (planned for milestone {milestone}).[/yellow]")
+    err.print(f"[yellow]Ez még nincs kész (a {milestone}. mérföldkőben készül el).[/yellow]")
     raise typer.Exit(code=2)
 
 
@@ -79,64 +83,87 @@ def timeline(
             "--source",
             "-s",
             exists=True,
-            help="EVTX file or folder to read directly (repeatable, folders are recursive).",
+            help=(
+                "Közvetlenül beolvasandó EVTX-fájl vagy mappa "
+                "(többször is megadható, a mappákat rekurzívan bejárja)."
+            ),
         ),
     ] = None,
     case: Annotated[
-        Path | None, typer.Option("--case", help="Case database (available from milestone 4).")
+        Path | None, typer.Option("--case", help="Vizsgálati adatbázis (a 4. mérföldkőtől).")
     ] = None,
     user: Annotated[
-        str | None, typer.Option("--user", "-u", help="DOMAIN\\user, UPN, or user name.")
+        str | None,
+        typer.Option("--user", "-u", help="DOMAIN\\felhasználó, UPN vagy felhasználónév."),
     ] = None,
-    sid: Annotated[str | None, typer.Option("--sid", help="Account SID.")] = None,
-    ip: Annotated[str | None, typer.Option("--ip", help="Source IP address.")] = None,
+    sid: Annotated[str | None, typer.Option("--sid", help="A fiók SID-je.")] = None,
+    ip: Annotated[str | None, typer.Option("--ip", help="Forrás-IP-cím.")] = None,
     from_: Annotated[
         str | None,
-        typer.Option("--from", help="Start (date or ISO datetime, in the display time zone)."),
+        typer.Option(
+            "--from", help="Kezdete (dátum vagy ISO időpont, a megjelenítési időzónában)."
+        ),
     ] = None,
     to: Annotated[
         str | None,
-        typer.Option("--to", help="End (a date includes the whole day)."),
+        typer.Option("--to", help="Vége (egy dátum az egész napot jelenti)."),
     ] = None,
     tz: Annotated[
         str | None,
-        typer.Option("--tz", help="Display time zone, e.g. Europe/Budapest (default: local)."),
+        typer.Option(
+            "--tz", help="Megjelenítési időzóna, pl. Europe/Budapest (alapértelmezés: helyi idő)."
+        ),
     ] = None,
     category: Annotated[
         str | None,
-        typer.Option("--category", help="Comma separated list, e.g. AUTHENTICATION,PASSWORD."),
+        typer.Option(
+            "--category", help="Kategóriák vesszővel elválasztva, pl. AUTHENTICATION,PASSWORD."
+        ),
     ] = None,
     min_severity: Annotated[
-        Severity, typer.Option("--min-severity", case_sensitive=False)
+        Severity,
+        typer.Option(
+            "--min-severity",
+            case_sensitive=False,
+            help="Legalacsonyabb megjelenített súlyosság.",
+        ),
     ] = Severity.INFO,
     include_machine_accounts: Annotated[
         bool,
-        typer.Option("--include-machine-accounts", help="Keep events of accounts ending in $."),
+        typer.Option(
+            "--include-machine-accounts", help="A $ végű gépfiókok eseményei is látszódjanak."
+        ),
     ] = False,
-    lang: Annotated[Lang, typer.Option("--lang", help="Description language.")] = Lang.en,
+    lang: Annotated[Lang, typer.Option("--lang", help="A leírások nyelve.")] = Lang.hu,
 ) -> None:
-    """Show the timeline of one account (or of one source IP)."""
+    """Egy fiók (vagy egy forrás-IP) idővonalának megjelenítése."""
     if case is not None:
         _not_yet(4)
     if not source:
-        raise typer.BadParameter("give at least one --source path", param_hint="--source")
+        raise typer.BadParameter("adj meg legalább egy --source útvonalat", param_hint="--source")
     if not (user or sid or ip):
-        raise typer.BadParameter("give --user, --sid or --ip")
+        raise typer.BadParameter("adj meg --user, --sid vagy --ip kapcsolót")
 
     try:
         display_tz = resolve_tz(tz)
+    except ValueError:
+        raise typer.BadParameter(f"ismeretlen időzóna: {tz}", param_hint="--tz") from None
+    try:
         start = parse_bound(from_, display_tz) if from_ else None
+    except ValueError:
+        raise typer.BadParameter(f"érvénytelen időpont: {from_}", param_hint="--from") from None
+    try:
         end = parse_bound(to, display_tz, end=True) if to else None
-    except ValueError as exc:
-        raise typer.BadParameter(str(exc)) from exc
+    except ValueError:
+        raise typer.BadParameter(f"érvénytelen időpont: {to}", param_hint="--to") from None
 
     files = discover_evtx(source)
     if not files:
-        err.print("[red]No .evtx files found.[/red]")
+        err.print("[red]Nem található .evtx fájl.[/red]")
         raise typer.Exit(code=1)
 
     stats = ReadStats()
-    with err.status(f"Reading {len(files)} EVTX file(s)..."):
+    with err.status(f"{len(files)} EVTX-fájl beolvasása..."):
         events = list(iter_events(files, stats))
 
     sid_map = SidMap()
@@ -159,39 +186,39 @@ def timeline(
     print_timeline(rows, display_tz, lang.value, f"UserTrail: {title}")
 
     err.print(
-        f"[dim]{stats.records} records read from {len(files)} file(s), "
-        f"{len(events)} mapped events, {len(rows)} shown.[/dim]"
+        f"[dim]{len(files)} fájlból {stats.records} rekord beolvasva, "
+        f"{len(events)} leképezett esemény, ebből {len(rows)} jelenik meg.[/dim]"
     )
     if stats.errors:
-        err.print(f"[yellow]{stats.errors} record(s) could not be processed:[/yellow]")
+        err.print(f"[yellow]{stats.errors} rekordot nem sikerült feldolgozni:[/yellow]")
         for sample in stats.error_samples:
             err.print(f"  [yellow]- {sample}[/yellow]")
 
 
 @app.command()
 def ingest(
-    paths: Annotated[list[Path], typer.Argument(help="Files or folders to ingest.")],
-    case: Annotated[Path, typer.Option("--case", help="Case database file.")],
+    paths: Annotated[list[Path], typer.Argument(help="Beolvasandó fájlok vagy mappák.")],
+    case: Annotated[Path, typer.Option("--case", help="Vizsgálati adatbázisfájl.")],
 ) -> None:
-    """Ingest EVTX and IIS logs into a case database."""
+    """EVTX- és IIS-naplók betöltése egy vizsgálati adatbázisba."""
     _not_yet(4)
 
 
 @app.command()
 def sources(case: Annotated[Path, typer.Option("--case")]) -> None:
-    """Show which log sources are available in a case and what is missing."""
+    """Megmutatja, milyen naplóforrások állnak rendelkezésre, és mi hiányzik."""
     _not_yet(9)
 
 
 @app.command()
 def users(case: Annotated[Path, typer.Option("--case")]) -> None:
-    """List every identity known in a case."""
+    """A vizsgálatban ismert összes identitás listája."""
     _not_yet(4)
 
 
 @app.command()
 def export(case: Annotated[Path, typer.Option("--case")]) -> None:
-    """Export a timeline as CSV, JSON Lines or a self-contained HTML report."""
+    """Idővonal exportálása CSV, JSON Lines vagy önálló HTML-riport formában."""
     _not_yet(8)
 
 

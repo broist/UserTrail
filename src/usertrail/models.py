@@ -123,7 +123,7 @@ class TimelineEvent:
         if self.timestamp_utc.tzinfo is None:
             raise ValueError("TimelineEvent.timestamp_utc must be timezone-aware")
 
-    def description(self, lang: str = "en") -> str:
+    def description(self, lang: str = "hu") -> str:
         from usertrail.i18n import render
 
         return render(self.message_key, self.message_params, lang)

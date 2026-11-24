@@ -312,8 +312,10 @@ Az `ingest` mappát is kapjon, és rekurzívan ismerje fel a `.evtx` és az IIS 
 
 ## 18. Kódolási szabályok
 
-- A kód, a változónevek, a kommentek és a commit-üzenetek **angolul** legyenek (nemzetközi közösség miatt).
-- A riportban megjelenő emberi leírások **magyarul és angolul** is legyenek elérhetők: a leírássablonokat egy nyelvi fájlban tárold, `--lang hu|en` kapcsolóval (alapértelmezés: `en`, hogy a nemzetközi közönség is használhassa).
+- A kód, a változónevek, a kommentek és a docstringek **angolul** legyenek (hogy nemzetközi hozzájárulók is dolgozhassanak rajta).
+- **Magyarul** legyen minden, ami nem kód: a commit-üzenetek, a README, a CONTRIBUTING.md, a CLI súgó- és hibaüzenetei, valamint a Claude-dal folytatott kommunikáció. (A projekt gazdájának döntése, 2026-11-24; ez felülírja a korábbi, angol commit-üzenetekre vonatkozó szabályt.)
+- Commitokban és PR-leírásokban Claude ne szerepeljen szerzőként vagy társszerzőként (nincs `Co-Authored-By` sor).
+- A riportban megjelenő emberi leírások **magyarul és angolul** is legyenek elérhetők: a leírássablonokat egy nyelvi fájlban tárold, `--lang hu|en` kapcsolóval (alapértelmezés: `hu`; az angol változat a nemzetközi közönségnek továbbra is elérhető).
 - Típusannotációk mindenhol, `mypy --strict`-kel ellenőrizve.
 - `ruff` formázás és linting.
 - Az új eseménytípusok hozzáadása legyen egyszerű: egy bejegyzés az `event_map.py`-ban, és ha kell, egy kis kezelőfüggvény. Ezt a CONTRIBUTING.md-ben dokumentáld.
@@ -352,5 +354,6 @@ Mindegyik végén legyenek zöld tesztek, és a funkció legyen kipróbálható 
 - **Szerep 4624/4625-nél:** a bejelentkező fiók `target`, mert a Subject általában a gépfiók/SYSTEM, amely a bejelentkezést lebonyolította.
 - **Keresési logika:** `--user` és `--sid` ugyanarra az identitásra illeszkednek (VAGY kapcsolat), az `--ip` szűkít (ÉS). Csak `--ip` esetén minden olyan esemény megjelenik, amelynek forrás-IP-je egyezik.
 - **Licenc:** MIT.
+- **Nyelv:** a CLI saját szövegei, a README, a CONTRIBUTING és a commit-üzenetek magyarok, a `--lang` alapértéke `hu` (`i18n.DEFAULT_LANG`). A typer/click beépített feliratai (Usage, Options, [default: …], --help leírása) egyelőre angolok maradnak.
 - **Fejlesztői környezet (Windows):** Python 3.12 felhasználói telepítés, projekt-venv a `.venv` mappában (`pip install -e ".[dev]"`). Ellenőrzés: `.venv\Scripts\ruff check .`, `ruff format --check .`, `mypy`, `pytest`. A `ruff` a `*.md` fájlokat nem formázza (különben a specifikáció kódrészleteit átírná).
 - **Az `evtx` csomag** saját típusjelzéseket hoz; a `records_json()` iterátor `__next__`-je `Any | None`, ezt az olvasó kezeli.

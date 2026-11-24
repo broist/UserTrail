@@ -33,6 +33,6 @@ def iter_events(files: Iterable[Path], stats: ReadStats) -> Iterator[TimelineEve
                 try:
                     yield from parse_record(record)
                 except Exception as exc:  # one bad record must never stop the run
-                    stats.add_error(f"{record.raw_ref}: parser error: {exc}")
+                    stats.add_error(f"{record.raw_ref}: feldolgozási hiba: {exc}")
         except OSError as exc:
-            stats.add_error(f"{path}: cannot open: {exc}")
+            stats.add_error(f"{path}: nem nyitható meg: {exc}")

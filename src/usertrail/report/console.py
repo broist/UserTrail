@@ -32,7 +32,7 @@ ROLE_STYLE: dict[Role, str] = {
 def build_table(rows: Sequence[TimelineRow], tz: tzinfo | None, lang: str, title: str) -> Table:
     table = Table(
         title=title,
-        caption=f"{ui('header.tz', lang)}: {tz_label(tz)}",
+        caption=f"{ui('header.tz', lang)}: {tz_label(tz, lang)}",
         show_lines=False,
         expand=False,
     )
@@ -68,6 +68,6 @@ def print_timeline(
     console = console or Console()
     if not rows:
         console.print(ui("no_events", lang))
-        console.print(f"{ui('header.tz', lang)}: {tz_label(tz)}", style="dim")
+        console.print(f"{ui('header.tz', lang)}: {tz_label(tz, lang)}", style="dim")
         return
     console.print(build_table(rows, tz, lang, title))

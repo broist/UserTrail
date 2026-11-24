@@ -173,12 +173,12 @@ def read_evtx(path: Path, stats: ReadStats) -> Iterator[RawRecord]:
                 stats.add_error(f"{source}: {exc}")
                 consecutive += 1
                 if consecutive >= MAX_CONSECUTIVE_ERRORS:
-                    stats.add_error(f"{source}: too many consecutive errors, stopped reading")
+                    stats.add_error(f"{source}: túl sok egymást követő hiba, az olvasás leállt")
                     break
                 continue
             consecutive = 0
             if not isinstance(item, Mapping):
-                stats.add_error(f"{source}: unexpected record object {type(item).__name__}")
+                stats.add_error(f"{source}: váratlan rekordobjektum: {type(item).__name__}")
                 continue
             record_id = int(item.get("event_record_id", 0))
             try:
