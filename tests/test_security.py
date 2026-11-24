@@ -20,7 +20,7 @@ def test_4625_failure(auth_events: list[TimelineEvent]) -> None:
     assert ev.category is Category.AUTHENTICATION
     assert ev.severity is Severity.LOW
     assert ev.actor is None
-    # NULL SID is dropped, the ::ffff: prefix is stripped.
+    # A NULL SID kimarad, a ::ffff: előtag levágódik.
     assert ev.target == Identity("kovacs.janos", "CEG", None)
     assert ev.src_ip == "10.0.0.5"
     assert ev.details["SubStatus"] == "0xC000006A"

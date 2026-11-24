@@ -1,4 +1,4 @@
-"""Common parser interface and the generic EventSpec -> TimelineEvent builder."""
+"""Közös parser-interfész és az általános EventSpec -> TimelineEvent építő."""
 
 from __future__ import annotations
 
@@ -11,12 +11,13 @@ from usertrail.models import Identity, TimelineEvent
 from usertrail.netutil import normalize_ip
 from usertrail.parsers.evtx_reader import RawRecord
 
-# A handler may adjust the event built from the spec (severity, details, params ...).
+# A kezelőfüggvény módosíthatja a specifikációból épített eseményt
+# (súlyosság, részletek, paraméterek ...).
 Handler = Callable[[RawRecord, TimelineEvent], None]
 
 
 class RecordParser(Protocol):
-    """A parser turns raw records of the channels it handles into timeline events."""
+    """A parser a kezelt csatornák nyers rekordjait idővonal-eseményekké alakítja."""
 
     channels: frozenset[str]
 
@@ -35,7 +36,7 @@ def identity_from(data: Mapping[str, Any], fields: IdentityFields | None) -> Ide
 
 
 def build_event(record: RawRecord, spec: EventSpec, source: str) -> TimelineEvent:
-    """Build a TimelineEvent from a record using only the declarative spec."""
+    """TimelineEvent építése egy rekordból, kizárólag a deklaratív specifikáció alapján."""
     data = record.data
     actor = identity_from(data, spec.actor)
     target = identity_from(data, spec.target)

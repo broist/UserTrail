@@ -33,7 +33,7 @@ def test_parse_system_time(raw: str, expected: datetime) -> None:
 
 
 def test_parse_system_time_rejects_empty() -> None:
-    with pytest.raises(ValueError, match="empty"):
+    with pytest.raises(ValueError, match="üres"):
         parse_system_time("  ")
 
 
@@ -54,7 +54,7 @@ def test_resolve_tz() -> None:
     assert resolve_tz("local") is None
     assert resolve_tz("utc") is UTC
     assert resolve_tz("Europe/Budapest") == BUDAPEST
-    with pytest.raises(ValueError, match="unknown time zone"):
+    with pytest.raises(ValueError, match="ismeretlen időzóna"):
         resolve_tz("Mars/Olympus_Mons")
 
 

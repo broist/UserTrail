@@ -1,4 +1,4 @@
-"""Selecting and ordering the events that belong to the searched identity."""
+"""A keresett identitáshoz tartozó események kiválasztása és rendezése."""
 
 from __future__ import annotations
 
@@ -12,16 +12,17 @@ from usertrail.models import Category, Role, Severity, TimelineEvent
 
 @dataclass(frozen=True, slots=True)
 class TimelineFilter:
-    """Search criteria.
+    """Keresési feltételek.
 
-    ``identity`` (built from --user/--sid) and ``ip`` combine with AND. With only an IP,
-    every event from that source address is returned with the ``related`` role.
+    Az ``identity`` (a --user/--sid kapcsolókból) és az ``ip`` ÉS kapcsolatban áll. Ha
+    csak IP van megadva, az erről a forráscímről érkező összes esemény ``related``
+    szereppel kerül a találatok közé.
     """
 
     identity: IdentityQuery | None = None
     ip: str | None = None
-    start: datetime | None = None  # inclusive, UTC
-    end: datetime | None = None  # exclusive, UTC
+    start: datetime | None = None  # zárt (beleértve), UTC
+    end: datetime | None = None  # nyílt (kizárva), UTC
     categories: frozenset[Category] | None = None
     min_severity: Severity = Severity.INFO
     include_machine_accounts: bool = False
@@ -57,7 +58,7 @@ def _is_machine_event(event: TimelineEvent) -> bool:
 
 
 def select(events: Iterable[TimelineEvent], flt: TimelineFilter) -> list[TimelineRow]:
-    """Filter events and return them in stable timeline order."""
+    """Események szűrése, stabil idővonal-sorrendben visszaadva."""
     skip_machines = not flt.include_machine_accounts and not (
         flt.identity is not None and flt.identity.targets_machine_account
     )

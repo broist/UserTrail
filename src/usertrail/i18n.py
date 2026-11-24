@@ -1,11 +1,12 @@
-"""Human readable message templates in English and Hungarian.
+"""Emberi olvasásra szánt üzenetsablonok magyarul és angolul.
 
-Templates use ``str.format`` placeholders filled from an event's ``message_params``.
-Missing parameters render as ``-``. A few derived values are computed here so that the
-stored parameters stay language independent:
+A sablonok ``str.format`` helyőrzőket használnak, amelyeket az esemény
+``message_params`` mezője tölt ki. A hiányzó paraméter helyén ``-`` jelenik meg. Néhány
+származtatott értéket itt számolunk ki, hogy a tárolt paraméterek nyelvfüggetlenek
+maradjanak:
 
-* ``{logon_type_text}`` from ``LogonType``
-* ``{status_text}`` from ``SubStatus`` (or ``Status`` when SubStatus is empty)
+* ``{logon_type_text}`` a ``LogonType`` mezőből
+* ``{status_text}`` a ``SubStatus`` mezőből (vagy a ``Status`` mezőből, ha a SubStatus üres)
 """
 
 from __future__ import annotations
@@ -74,7 +75,8 @@ LOGON_TYPES: dict[str, dict[int, str]] = {
     },
 }
 
-# NTSTATUS codes seen in 4625 Status / SubStatus, keyed by normalised "0xXXXXXXXX".
+# A 4625 Status / SubStatus mezőiben előforduló NTSTATUS-kódok,
+# normalizált "0xXXXXXXXX" kulccsal.
 STATUS_CODES: dict[str, dict[str, str]] = {
     "en": {
         "0xC0000064": "user does not exist",
@@ -156,7 +158,7 @@ def logon_type_text(value: Any, lang: str) -> str:
 
 
 def normalize_status(value: Any) -> str | None:
-    """Normalise an NTSTATUS value (int or hex string) to ``0xXXXXXXXX``."""
+    """NTSTATUS-érték (egész szám vagy hexa szöveg) normalizálása ``0xXXXXXXXX`` alakra."""
     if value is None:
         return None
     if isinstance(value, int):

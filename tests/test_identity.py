@@ -69,7 +69,7 @@ def test_query_matches_name_upn_and_sid_via_sid_map() -> None:
 
     by_upn = IdentityQuery.build("KOVACS.JANOS@ceg.hu", sid_map=sid_map)
     assert SID in by_upn.sids
-    # An event that only carries the SID (e.g. PowerShell) still matches.
+    # A csak SID-et hordozó esemény (pl. PowerShell) is illeszkedik.
     assert by_upn.matches(make_identity(sid=SID))
     assert by_upn.matches(make_identity("ceg\\Kovacs.Janos"))
     assert not by_upn.matches(make_identity("nagy.peter"))

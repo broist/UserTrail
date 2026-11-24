@@ -1,4 +1,4 @@
-"""Shared test helpers (importable as ``tests.helpers``)."""
+"""Közös teszt-segédfüggvények (``tests.helpers`` néven importálhatók)."""
 
 from __future__ import annotations
 

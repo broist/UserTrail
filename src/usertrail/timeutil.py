@@ -1,4 +1,4 @@
-"""UTC normalisation and display time zone handling."""
+"""UTC-normalizálás és a megjelenítési időzóna kezelése."""
 
 from __future__ import annotations
 
@@ -6,19 +6,19 @@ import re
 from datetime import UTC, date, datetime, time, timedelta, tzinfo
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-# Fractional seconds longer than microseconds (EVTX uses 100 ns resolution) are trimmed.
+# A mikroszekundumnál hosszabb törtmásodpercet levágjuk (az EVTX 100 ns felbontású).
 _FRACTION_RE = re.compile(r"(\.\d{6})\d+")
 
 
 def parse_system_time(value: str) -> datetime:
-    """Parse an EVTX ``SystemTime`` / ISO 8601 string into an aware UTC datetime.
+    """EVTX ``SystemTime`` / ISO 8601 szöveg átalakítása időzónás UTC datetime-má.
 
-    Strings without an offset are treated as UTC, which is what Windows writes.
+    Az eltolás nélküli szöveget UTC-nek tekinti, mert a Windows így írja.
     """
     text = value.strip()
     if not text:
-        raise ValueError("empty timestamp")
-    if text.upper().endswith(" UTC"):  # evtx iterator format: "2026-11-20 08:59:58.123 UTC"
+        raise ValueError("üres időbélyeg")
+    if text.upper().endswith(" UTC"):  # az evtx iterátor formátuma: "2026-11-20 08:59:58.123 UTC"
         text = text[:-4]
     if text.endswith(("Z", "z")):
         text = text[:-1] + "+00:00"
@@ -28,17 +28,17 @@ def parse_system_time(value: str) -> datetime:
 
 
 def ensure_utc(dt: datetime) -> datetime:
-    """Attach UTC to naive datetimes and convert aware ones to UTC."""
+    """Időzóna nélküli datetime-hoz UTC-t rendel, az időzónást UTC-re váltja."""
     if dt.tzinfo is None:
         return dt.replace(tzinfo=UTC)
     return dt.astimezone(UTC)
 
 
 def resolve_tz(name: str | None) -> tzinfo | None:
-    """Resolve an IANA zone name. ``None`` or ``"local"`` means the machine's local zone.
+    """IANA-időzónanév feloldása. ``None`` vagy ``"local"``: a gép helyi időzónája.
 
-    The local zone is represented as ``None`` because ``datetime.astimezone(None)``
-    applies the correct DST offset for each instant, while a fixed offset would not.
+    A helyi időzónát ``None`` jelöli, mert a ``datetime.astimezone(None)`` minden
+    időpontra a helyes nyári/téli eltolást alkalmazza, egy rögzített eltolás viszont nem.
     """
     if name is None or name.strip().lower() == "local":
         return None
@@ -47,7 +47,7 @@ def resolve_tz(name: str | None) -> tzinfo | None:
     try:
         return ZoneInfo(name.strip())
     except (ZoneInfoNotFoundError, ValueError) as exc:
-        raise ValueError(f"unknown time zone: {name}") from exc
+        raise ValueError(f"ismeretlen időzóna: {name}") from exc
 
 
 def to_display(dt: datetime, tz: tzinfo | None) -> datetime:
@@ -55,7 +55,7 @@ def to_display(dt: datetime, tz: tzinfo | None) -> datetime:
 
 
 def tz_label(tz: tzinfo | None, lang: str = "hu") -> str:
-    """Human readable name of the display zone, for report headers."""
+    """A megjelenítési időzóna olvasható neve a riportfejlécekhez."""
     if tz is None:
         offset = datetime.now().astimezone().strftime("%z")
         utc = f"UTC{offset[:3]}:{offset[3:]}"
@@ -72,10 +72,10 @@ def format_display(dt: datetime, tz: tzinfo | None) -> str:
 
 
 def parse_bound(text: str, tz: tzinfo | None, *, end: bool = False) -> datetime:
-    """Parse a ``--from`` / ``--to`` value given in the display time zone.
+    """A megjelenítési időzónában megadott ``--from`` / ``--to`` érték feldolgozása.
 
-    A date without a time covers the whole day: as an end bound it means the start of
-    the following day (exclusive). Values with an explicit offset keep that offset.
+    Az idő nélküli dátum az egész napot jelenti: záró határként a következő nap kezdetét
+    (kizárólagosan). A kifejezett eltolással megadott érték megtartja az eltolását.
     """
     raw = text.strip()
     try:
@@ -91,6 +91,6 @@ def parse_bound(text: str, tz: tzinfo | None, *, end: bool = False) -> datetime:
     if naive.tzinfo is not None:
         return naive.astimezone(UTC)
     if tz is None:
-        # Interpret in the machine's local zone.
+        # A gép helyi időzónájában értelmezzük.
         return naive.astimezone().astimezone(UTC)
     return naive.replace(tzinfo=tz).astimezone(UTC)

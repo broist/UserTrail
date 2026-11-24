@@ -1,8 +1,8 @@
-"""Read EVTX files into source-independent :class:`RawRecord` objects.
+"""EVTX-fájlok beolvasása forrásfüggetlen :class:`RawRecord` objektumokká.
 
-The heavy lifting is done by the Rust based ``evtx`` package. This module only turns
-its JSON output into a flat, predictable structure and makes sure that a corrupt
-record never stops processing of the rest of the file.
+A nehéz munkát a Rust-alapú ``evtx`` csomag végzi. Ez a modul csak lapos, kiszámítható
+szerkezetűvé alakítja a JSON-kimenetét, és gondoskodik róla, hogy egy sérült rekord
+soha ne állítsa le a fájl többi részének feldolgozását.
 """
 
 from __future__ import annotations
@@ -16,15 +16,15 @@ from typing import Any
 
 from usertrail.timeutil import parse_system_time
 
-# Stop reading a file after this many consecutive iterator errors, so a badly damaged
-# file cannot trap us in an endless loop.
+# Ennyi egymást követő iterátorhiba után abbahagyjuk a fájl olvasását, hogy egy
+# súlyosan sérült fájl ne ejtsen végtelen ciklusba.
 MAX_CONSECUTIVE_ERRORS = 1000
 MAX_ERROR_SAMPLES = 20
 
 
 @dataclass(frozen=True, slots=True)
 class RawRecord:
-    """One EVTX record with its EventData / UserData flattened into ``data``."""
+    """Egy EVTX-rekord; az EventData / UserData mezői a ``data`` szótárba lapítva."""
 
     source_path: str
     record_id: int
@@ -43,7 +43,7 @@ class RawRecord:
 
 @dataclass(slots=True)
 class ReadStats:
-    """Per-run counters; errors are kept so they can be reported, never silently lost."""
+    """Futásonkénti számlálók; a hibákat megőrizzük, hogy jelenteni lehessen őket."""
 
     records: int = 0
     errors: int = 0
@@ -56,7 +56,7 @@ class ReadStats:
 
 
 def _scalar(value: Any) -> Any:
-    """Unwrap ``{"#text": ...}`` nodes and turn placeholders into None."""
+    """A ``{"#text": ...}`` csomópontok kibontása, a helyőrzők None-ná alakítása."""
     if isinstance(value, Mapping):
         if "#text" in value:
             value = value["#text"]
@@ -69,9 +69,10 @@ def _scalar(value: Any) -> Any:
 
 
 def flatten_event_data(node: Any) -> dict[str, Any]:
-    """Flatten ``Event.EventData`` into ``{field_name: value}``.
+    """Az ``Event.EventData`` lapítása ``{mezőnév: érték}`` szótárrá.
 
-    Unnamed ``<Data>`` elements (seen in some providers) become ``Data_0``, ``Data_1`` ...
+    A név nélküli ``<Data>`` elemekből (egyes szolgáltatóknál fordul elő) ``Data_0``,
+    ``Data_1`` ... kulcs lesz.
     """
     if not isinstance(node, Mapping):
         return {}
@@ -91,7 +92,8 @@ def flatten_event_data(node: Any) -> dict[str, Any]:
 
 
 def flatten_user_data(node: Any) -> dict[str, Any]:
-    """Flatten ``Event.UserData``; its single child (e.g. ``EventXML``) holds the fields."""
+    """Az ``Event.UserData`` lapítása; a mezők az egyetlen gyermekelemében vannak
+    (pl. ``EventXML``)."""
     if not isinstance(node, Mapping):
         return {}
     for key, child in node.items():
@@ -104,7 +106,7 @@ def _event_id(value: Any) -> int:
     if isinstance(value, Mapping):
         value = value.get("#text")
     if value is None:
-        raise ValueError("record has no EventID")
+        raise ValueError("a rekordnak nincs EventID mezője")
     return int(value)
 
 
@@ -122,20 +124,20 @@ def record_from_json(
     record_id: int,
     fallback_timestamp: str | None = None,
 ) -> RawRecord:
-    """Convert one record from ``PyEvtxParser.records_json()`` into a RawRecord.
+    """Egy ``PyEvtxParser.records_json()`` rekord átalakítása RawRecord objektummá.
 
-    Raises ``ValueError`` (or ``KeyError``/``TypeError``) on structurally broken input;
-    callers count those as record errors.
+    Szerkezetileg hibás bemenetnél ``ValueError`` (vagy ``KeyError``/``TypeError``)
+    kivételt dob; a hívók ezt rekordhibaként számolják.
     """
     event = doc["Event"]
     system = event["System"]
     channel = system.get("Channel")
     if not channel:
-        raise ValueError("record has no Channel")
+        raise ValueError("a rekordnak nincs Channel mezője")
 
     time_raw = _attr(system.get("TimeCreated"), "SystemTime") or fallback_timestamp
     if not time_raw:
-        raise ValueError("record has no TimeCreated/SystemTime")
+        raise ValueError("a rekordnak nincs TimeCreated/SystemTime mezője")
 
     data = flatten_event_data(event.get("EventData"))
     if "UserData" in event:
@@ -157,7 +159,7 @@ def record_from_json(
 
 
 def read_evtx(path: Path, stats: ReadStats) -> Iterator[RawRecord]:
-    """Stream the records of one EVTX file. The file is opened read-only."""
+    """Egy EVTX-fájl rekordjainak streamelt olvasása. A fájlt csak olvasásra nyitja meg."""
     from evtx import PyEvtxParser
 
     source = str(path)
@@ -169,7 +171,7 @@ def read_evtx(path: Path, stats: ReadStats) -> Iterator[RawRecord]:
                 item = next(records)
             except StopIteration:
                 break
-            except Exception as exc:  # the Rust parser surfaces corrupt chunks this way
+            except Exception as exc:  # a Rust-parser így jelzi a sérült chunkokat
                 stats.add_error(f"{source}: {exc}")
                 consecutive += 1
                 if consecutive >= MAX_CONSECUTIVE_ERRORS:

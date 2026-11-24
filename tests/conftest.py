@@ -22,9 +22,9 @@ def auth_events(auth_records: list[RawRecord]) -> list[TimelineEvent]:
 
 @pytest.fixture
 def fake_evtx(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
-    """An empty ``Security.evtx`` whose reader yields the JSON fixture records.
+    """Üres ``Security.evtx``, amelynek olvasója a JSON-fixture rekordjait adja vissza.
 
-    Lets CLI tests run end to end without a binary EVTX fixture.
+    Így a CLI-tesztek bináris EVTX-fixture nélkül is végig tudnak futni.
     """
     path = tmp_path / "Security.evtx"
     path.write_bytes(b"")

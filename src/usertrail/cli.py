@@ -1,4 +1,4 @@
-"""Command line interface."""
+"""Parancssori felület."""
 
 import enum
 from pathlib import Path
@@ -7,7 +7,7 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from usertrail import __version__
+from usertrail import __version__, cli_hu
 from usertrail.identity import IdentityQuery, SidMap
 from usertrail.models import Category, Severity
 from usertrail.parsers.evtx_reader import ReadStats
@@ -15,6 +15,8 @@ from usertrail.pipeline import discover_evtx, iter_events
 from usertrail.query import TimelineFilter, select
 from usertrail.report.console import print_timeline
 from usertrail.timeutil import parse_bound, resolve_tz
+
+cli_hu.apply()
 
 app = typer.Typer(
     name="usertrail",

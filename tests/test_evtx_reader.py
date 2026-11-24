@@ -35,7 +35,7 @@ def test_basic_fields_and_raw_ref() -> None:
     assert rec.timestamp_utc == datetime(2026, 11, 20, 9, 0, tzinfo=UTC)
     assert rec.channel == "Security"
     assert rec.computer == "DC01"
-    # EventRecordID from the record wins over the iterator's id.
+    # A rekord saját EventRecordID-je erősebb, mint az iterátor azonosítója.
     assert rec.record_id == 7
     assert rec.raw_ref == "C:/cases/Security.evtx#7"
 

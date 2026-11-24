@@ -1,4 +1,4 @@
-"""Source discovery and record -> event streaming shared by the CLI commands."""
+"""Forrásfájlok felderítése és rekord -> esemény streamelés a CLI-parancsokhoz."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ EVTX_SUFFIX = ".evtx"
 
 
 def discover_evtx(paths: Iterable[Path]) -> list[Path]:
-    """Expand files and directories (recursively) into a sorted list of EVTX files."""
+    """Fájlok és mappák (rekurzív) kibontása EVTX-fájlok rendezett listájává."""
     found: set[Path] = set()
     for path in paths:
         if path.is_dir():
@@ -26,13 +26,13 @@ def discover_evtx(paths: Iterable[Path]) -> list[Path]:
 
 
 def iter_events(files: Iterable[Path], stats: ReadStats) -> Iterator[TimelineEvent]:
-    """Yield timeline events from EVTX files; parser failures are counted, not raised."""
+    """Idővonal-események EVTX-fájlokból; a parserhibákat számolja, nem dobja tovább."""
     for path in files:
         try:
             for record in read_evtx(path, stats):
                 try:
                     yield from parse_record(record)
-                except Exception as exc:  # one bad record must never stop the run
+                except Exception as exc:  # egy hibás rekord sosem állíthatja le a futást
                     stats.add_error(f"{record.raw_ref}: feldolgozási hiba: {exc}")
         except OSError as exc:
             stats.add_error(f"{path}: nem nyitható meg: {exc}")

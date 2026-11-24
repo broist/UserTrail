@@ -1,1 +1,1 @@
-"""Output writers."""
+"""Kimenetek (konzol, CSV, JSON, HTML)."""

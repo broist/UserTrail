@@ -1,4 +1,4 @@
-"""Core data model shared by every parser, the store and the report writers."""
+"""Az alap adatmodell, amelyet minden parser, a tároló és a kimenetek is használnak."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from typing import Any
 
 
 class Category(enum.StrEnum):
-    """High-level grouping of timeline events."""
+    """Az idővonal-események fő csoportjai."""
 
     ACCOUNT_LIFECYCLE = "ACCOUNT_LIFECYCLE"
     AUTHENTICATION = "AUTHENTICATION"
@@ -25,7 +25,7 @@ class Category(enum.StrEnum):
 
 
 class Severity(enum.StrEnum):
-    """Event severity. Use :attr:`rank` for ordering comparisons."""
+    """Az esemény súlyossága. Sorrend szerinti összehasonlításhoz a :attr:`rank` való."""
 
     INFO = "info"
     LOW = "low"
@@ -46,15 +46,15 @@ _SEVERITY_RANK: dict[Severity, int] = {
 
 
 class Role(enum.StrEnum):
-    """How the searched identity takes part in an event."""
+    """Milyen szerepben vesz részt a keresett identitás az eseményben."""
 
-    ACTOR = "actor"  # the searched account performed the action
-    TARGET = "target"  # the action was performed on the searched account
-    BOTH = "both"  # e.g. a user changing their own password
-    RELATED = "related"  # matched through the source IP only
+    ACTOR = "actor"  # a keresett fiók végezte a műveletet
+    TARGET = "target"  # a műveletet a keresett fiókon végezték
+    BOTH = "both"  # pl. a felhasználó a saját jelszavát cseréli
+    RELATED = "related"  # csak a forrás-IP alapján kapcsolódik
 
 
-# Well-known local system principals (identity normalisation marks these separately).
+# Jól ismert helyi rendszerfiókok (az identitás-normalizálás külön jelöli őket).
 WELL_KNOWN_SIDS: dict[str, str] = {
     "S-1-5-18": "SYSTEM",
     "S-1-5-19": "LOCAL SERVICE",
@@ -65,10 +65,11 @@ WELL_KNOWN_SIDS: dict[str, str] = {
 
 @dataclass(frozen=True, slots=True)
 class Identity:
-    """An account as it appears in a single event.
+    """Egy fiók úgy, ahogy egyetlen eseményben megjelenik.
 
-    Construct instances through :func:`usertrail.identity.make_identity`, which cleans
-    placeholder values and splits ``DOMAIN\\user`` / UPN / SID inputs.
+    Példányt a :func:`usertrail.identity.make_identity` függvénnyel érdemes létrehozni:
+    az kiszűri a helyőrző értékeket, és szétbontja a ``DOMAIN\\felhasználó`` / UPN / SID
+    alakú bemeneteket.
     """
 
     name: str | None = None
@@ -77,7 +78,7 @@ class Identity:
 
     @property
     def name_key(self) -> str | None:
-        """Case-insensitive comparison key for the account name."""
+        """A fióknév kis- és nagybetűtől független összehasonlító kulcsa."""
         return self.name.casefold() if self.name else None
 
     @property
@@ -97,11 +98,11 @@ class Identity:
 
 @dataclass(slots=True)
 class TimelineEvent:
-    """One normalised event on the timeline.
+    """Egy normalizált esemény az idővonalon.
 
-    The human readable description is not stored as text: ``message_key`` and
-    ``message_params`` are rendered on demand by :meth:`description`, so the same case
-    can be shown in any supported language.
+    Az emberi leírást nem kész szövegként tároljuk: a ``message_key`` és a
+    ``message_params`` mezőkből a :meth:`description` állítja elő igény szerint, így
+    ugyanaz a vizsgálat bármelyik támogatott nyelven megjeleníthető.
     """
 
     timestamp_utc: datetime
@@ -121,7 +122,7 @@ class TimelineEvent:
 
     def __post_init__(self) -> None:
         if self.timestamp_utc.tzinfo is None:
-            raise ValueError("TimelineEvent.timestamp_utc must be timezone-aware")
+            raise ValueError("a TimelineEvent.timestamp_utc mezőnek időzónát is tartalmaznia kell")
 
     def description(self, lang: str = "hu") -> str:
         from usertrail.i18n import render
@@ -130,7 +131,7 @@ class TimelineEvent:
 
     @property
     def sort_key(self) -> tuple[datetime, str, str, int]:
-        """Stable ordering: time, then source, then original file and record number."""
+        """Stabil sorrend: idő, majd forrás, majd az eredeti fájl és a rekordszám."""
         path, _, record = self.raw_ref.rpartition("#")
         try:
             record_no = int(record)

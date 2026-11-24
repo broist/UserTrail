@@ -1,1 +1,1 @@
-"""Event ID mappings."""
+"""Event ID-leképezések."""

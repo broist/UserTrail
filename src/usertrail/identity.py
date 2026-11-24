@@ -1,4 +1,4 @@
-"""Account name normalisation, SID <-> name mapping and identity matching."""
+"""Fióknév-normalizálás, SID ↔ név térkép és identitás-illesztés."""
 
 from __future__ import annotations
 
@@ -13,7 +13,8 @@ from usertrail.models import WELL_KNOWN_SIDS, Identity
 SID_RE = re.compile(r"^S-1-\d+(-\d+)+$", re.IGNORECASE)
 
 _PLACEHOLDERS = {"", "-"}
-# SIDs that mean "no account" in Windows events (e.g. 4625 for unknown users).
+# SID-ek, amelyek a Windows-eseményekben „nincs fiók” jelentésűek
+# (pl. 4625 nem létező felhasználónál).
 _EMPTY_SIDS = {"S-1-0-0"}
 _WELL_KNOWN_NAMES = {
     "system",
@@ -25,7 +26,7 @@ _WELL_KNOWN_NAMES = {
 
 
 def clean(value: Any) -> str | None:
-    """Turn a raw field value into a stripped string, or None for placeholders."""
+    """Nyers mezőérték szóközmentes szöveggé alakítása; helyőrzőnél None."""
     if value is None:
         return None
     text = str(value).strip()
@@ -37,12 +38,12 @@ def is_sid(text: str) -> bool:
 
 
 def parse_account(raw: str) -> tuple[str | None, str | None, str | None]:
-    """Split a free-form account reference into ``(name, domain, sid)``.
+    """Szabad formájú fiókhivatkozás szétbontása ``(név, tartomány, sid)`` hármasra.
 
-    Accepted forms: ``DOMAIN\\user``, ``user@domain.tld`` (UPN), ``user``, a SID, or an
-    LDAP distinguished name (``CN=...,OU=...,DC=...``). For a DN the returned name is the
-    CN, which is usually the display name and not the sAMAccountName, so DN matches
-    should prefer the accompanying SID when one is available.
+    Elfogadott alakok: ``DOMAIN\\felhasználó``, ``felhasználó@domain.tld`` (UPN), puszta
+    felhasználónév, SID, illetve LDAP DN (``CN=...,OU=...,DC=...``). DN esetén a visszaadott
+    név a CN, ami általában a megjelenítendő név és nem a sAMAccountName, ezért DN-nél ha
+    van mellette SID, az illesztésnél azt érdemes előnyben részesíteni.
     """
     text = raw.strip()
     if not text or text in _PLACEHOLDERS:
@@ -61,7 +62,7 @@ def parse_account(raw: str) -> tuple[str | None, str | None, str | None]:
 
 
 def _parse_dn(dn: str) -> tuple[str | None, str | None, str | None]:
-    # Split on commas that are not escaped with a backslash.
+    # Bontás a vesszőknél, kivéve a visszaperjellel escape-elt vesszőket.
     parts = [p.replace("\\,", ",").strip() for p in re.split(r"(?<!\\),", dn)]
     cn: str | None = None
     dcs: list[str] = []
@@ -76,9 +77,9 @@ def _parse_dn(dn: str) -> tuple[str | None, str | None, str | None]:
 
 
 def make_identity(name: Any = None, domain: Any = None, sid: Any = None) -> Identity | None:
-    """Build a normalised :class:`Identity` from raw event fields.
+    """Normalizált :class:`Identity` létrehozása nyers eseménymezőkből.
 
-    Returns None when none of the inputs carries information.
+    None-t ad vissza, ha egyik bemenet sem hordoz információt.
     """
     name_s = clean(name)
     domain_s = clean(domain)
@@ -107,7 +108,7 @@ def is_machine_account(identity: Identity | None) -> bool:
 
 
 def well_known_label(identity: Identity | None) -> str | None:
-    """Return a label such as ``SYSTEM`` for built-in system principals."""
+    """Beépített rendszerfióknál címkét ad vissza, pl. ``SYSTEM``."""
     if identity is None:
         return None
     if identity.sid_key and identity.sid_key in WELL_KNOWN_SIDS:
@@ -118,7 +119,7 @@ def well_known_label(identity: Identity | None) -> str | None:
 
 
 class SidMap:
-    """Bidirectional SID <-> account name map learnt from processed events."""
+    """Kétirányú SID ↔ fióknév térkép, amelyet a feldolgozott eseményekből tanul."""
 
     def __init__(self) -> None:
         self._names_by_sid: dict[str, set[str]] = defaultdict(set)
@@ -143,7 +144,7 @@ class SidMap:
 
 @dataclass(frozen=True, slots=True)
 class IdentityQuery:
-    """The set of names and SIDs that all refer to the searched account."""
+    """Azoknak a neveknek és SID-eknek a halmaza, amelyek a keresett fiókra utalnak."""
 
     names: frozenset[str]
     sids: frozenset[str]
@@ -163,7 +164,8 @@ class IdentityQuery:
         if sid:
             sids.add(sid.strip().upper())
         if sid_map is not None:
-            # Expand both ways so SID-only events and name-only events both match.
+            # Bővítés mindkét irányban, hogy a csak SID-es és a csak neves események is
+            # illeszkedjenek.
             for n in list(names):
                 sids |= sid_map.sids_for_name(n)
             for s in list(sids):

@@ -23,13 +23,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - name: Install
+      - name: Telepítés
         run: python -m pip install -e ".[dev]"
-      - name: Ruff lint
+      - name: Ruff ellenőrzés
         run: ruff check .
-      - name: Ruff format
+      - name: Ruff formázás
         run: ruff format --check .
-      - name: Mypy
+      - name: Mypy típusellenőrzés
         run: mypy
-      - name: Pytest
+      - name: Pytest tesztek
         run: pytest

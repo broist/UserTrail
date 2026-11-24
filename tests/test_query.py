@@ -22,7 +22,8 @@ def _ids(rows: Sequence[TimelineRow]) -> list[str]:
 
 def test_user_timeline_order_and_roles(auth_events: list[TimelineEvent]) -> None:
     rows = select(auth_events, TimelineFilter(identity=_query(auth_events, "CEG\\kovacs.janos")))
-    # 4624 and 4672 share a timestamp: ordered by record number. Logoffs follow in time order.
+    # A 4624 és a 4672 időbélyege azonos: rekordszám szerint rendeződnek.
+    # A kijelentkezések időrendben követik őket.
     assert _ids(rows) == ["101", "102", "103", "104", "107", "106"]
     roles = {r.event.raw_ref.rsplit("#", 1)[1]: r.role for r in rows}
     assert roles["101"] is Role.TARGET
@@ -33,7 +34,7 @@ def test_user_timeline_order_and_roles(auth_events: list[TimelineEvent]) -> None
 def test_sid_query_matches_name_only_events(auth_events: list[TimelineEvent]) -> None:
     query = _query(auth_events, "S-1-5-21-1111111111-2222222222-3333333333-1105")
     rows = select(auth_events, TimelineFilter(identity=query))
-    # 4625 (record 101) carries only the name; the SID map links it.
+    # A 4625 (101-es rekord) csak nevet hordoz; a SID-térkép köti össze.
     assert "101" in _ids(rows)
 
 

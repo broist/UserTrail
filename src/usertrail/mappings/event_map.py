@@ -1,8 +1,9 @@
-"""Declarative Event ID -> timeline event mapping.
+"""Deklaratív leképezés: Event ID -> idővonal-esemény.
 
-Adding support for a new event is usually a single :class:`EventSpec` entry below. If
-the event needs custom logic (renamed fields, derived severity ...), also register a
-small handler in the matching parser module (see ``parsers/security.py``).
+Egy új esemény támogatása általában egyetlen :class:`EventSpec` bejegyzés az alábbi
+listában. Ha az eseményhez egyedi logika kell (átnevezett mezők, származtatott
+súlyosság ...), a megfelelő parsermodulban egy kis kezelőfüggvényt is regisztrálni kell
+(lásd ``parsers/security.py``).
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ from typing import TypeAlias
 
 from usertrail.models import Category, Severity
 
-# (name field, domain field, SID field); any element may be None.
+# (névmező, tartománymező, SID-mező); bármelyik elem lehet None.
 IdentityFields: TypeAlias = tuple[str | None, str | None, str | None]
 SUBJECT: IdentityFields = ("SubjectUserName", "SubjectDomainName", "SubjectUserSid")
 TARGET: IdentityFields = ("TargetUserName", "TargetDomainName", "TargetUserSid")
@@ -25,11 +26,11 @@ class EventSpec:
     action: str
     category: Category
     severity: Severity = Severity.INFO
-    message_key: str | None = None  # defaults to ``action``
+    message_key: str | None = None  # alapértelmezés: az ``action`` értéke
     actor: IdentityFields | None = SUBJECT
     target: IdentityFields | None = TARGET
     ip_field: str | None = None
-    # Fields copied into ``details`` (and available to message templates).
+    # A ``details`` szótárba másolt mezők (az üzenetsablonokban is használhatók).
     detail_fields: tuple[str, ...] = ()
 
     @property
@@ -48,13 +49,13 @@ _LOGON_FIELDS = (
 )
 
 EVENT_SPECS: tuple[EventSpec, ...] = (
-    # --- Security: authentication -------------------------------------------------
+    # --- Security: hitelesítés ------------------------------------------------------
     EventSpec(
         "Security",
         4624,
         "logon_success",
         Category.AUTHENTICATION,
-        actor=None,  # Subject is the machine/SYSTEM that performed the logon
+        actor=None,  # a Subject a bejelentkezést lebonyolító gép/SYSTEM
         ip_field="IpAddress",
         detail_fields=(*_LOGON_FIELDS, "ElevatedToken"),
     ),

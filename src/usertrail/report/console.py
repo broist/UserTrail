@@ -1,4 +1,4 @@
-"""Console (rich table) output."""
+"""Konzolos kimenet (rich táblázat)."""
 
 from __future__ import annotations
 

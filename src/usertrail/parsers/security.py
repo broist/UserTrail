@@ -1,4 +1,4 @@
-"""Security channel parser."""
+"""A Security csatorna parsere."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ SOURCE = "Security"
 
 
 def _logon(record: RawRecord, event: TimelineEvent) -> None:
-    """4624/4625: normalise codes, fall back to the workstation name as the source."""
+    """4624/4625: kódok normalizálása; IP hiányában a munkaállomás neve a forrás."""
     for key in ("Status", "SubStatus"):
         if key in event.details:
             event.details[key] = normalize_status(event.details[key])

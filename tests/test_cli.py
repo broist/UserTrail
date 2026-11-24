@@ -47,7 +47,7 @@ def test_timeline_for_user_from_folder(fake_evtx: Path) -> None:
     assert result.exit_code == 0, result.output
     out = result.output
     assert "Europe/Budapest" in out
-    # 08:59:58 UTC is 09:59:58 in Budapest (CET).
+    # 08:59:58 UTC Budapesten 09:59:58 (CET).
     assert "2026-11-20 09:59:58" in out
     assert "hibás jelszó" in out
     assert "célpont" in out

@@ -5,12 +5,12 @@ build-backend = "hatchling.build"
 [project]
 name = "usertrail"
 version = "0.1.0.dev0"
-description = "Identity-centric Windows forensic timeline builder for EVTX and IIS logs"
+description = "Felhasználóközpontú Windows forensic idővonal-építő EVTX- és IIS-naplókhoz"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{ name = "UserTrail contributors" }]
+authors = [{ name = "A UserTrail közreműködői" }]
 keywords = ["forensics", "dfir", "evtx", "active-directory", "timeline", "iis"]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -30,7 +30,7 @@ dependencies = [
     "typer>=0.12",
     "rich>=13.7",
     "jinja2>=3.1",
-    # Windows has no system IANA time zone database; zoneinfo needs this package there.
+    # Windowson nincs rendszerszintű IANA-időzóna-adatbázis, ott a zoneinfo ezt a csomagot használja.
     "tzdata; sys_platform == 'win32'",
 ]
 
@@ -52,16 +52,16 @@ packages = ["src/usertrail"]
 line-length = 100
 target-version = "py311"
 src = ["src", "tests"]
-# Keep documentation snippets (and the spec in CLAUDE.md) exactly as written.
+# A dokumentáció kódrészletei (és a CLAUDE.md specifikációja) maradjanak változatlanok.
 extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "N", "C4", "PT"]
-# Hungarian report strings legitimately contain non-ASCII characters and dashes.
+# A magyar szövegekben jogosan szerepelnek ékezetes karakterek és gondolatjelek.
 ignore = ["RUF001", "RUF002", "RUF003"]
 
 [tool.ruff.lint.per-file-ignores]
-# typer evaluates argument defaults such as typer.Option(...) at call time by design.
+# A typer szándékosan hívásidőben értékeli ki a typer.Option(...) alapértékeket.
 "src/usertrail/cli.py" = ["B008"]
 
 [tool.mypy]

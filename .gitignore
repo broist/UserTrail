@@ -11,7 +11,7 @@ venv/
 .coverage
 htmlcov/
 
-# Case databases and evidence never belong in the repository.
+# Vizsgálati adatbázisok és bizonyítékok sosem kerülhetnek a repóba.
 *.db
 *.db-journal
 /cases/

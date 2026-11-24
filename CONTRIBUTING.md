@@ -1,8 +1,9 @@
 # Hozzájárulás a UserTrailhez
 
-Köszönjük, hogy segítesz! A kód, a változónevek és a kommentek angolul készülnek, hogy külföldi
-hozzájárulók is dolgozhassanak rajta. A commit-üzenetek és a dokumentáció magyarul íródnak. A
-felhasználónak szóló leírások magyarul és angolul is elérhetők.
+Köszönjük, hogy segítesz! A projekt nyelve a magyar: a kommentek, a docstringek, a
+commit-üzenetek, a dokumentáció és a CLI szövegei is magyarul készülnek. Csak az azonosítók
+(változó-, függvény- és osztálynevek) angolok. Az idővonal leírásai magyarul és angolul is
+elérhetők (`--lang hu|en`).
 
 ## Fejlesztői környezet
 
@@ -30,7 +31,7 @@ pytest
    ```python
    EventSpec(
        "Security", 4740, "account_locked", Category.LOCKOUT, Severity.MEDIUM,
-       actor=None,                                     # no meaningful Subject
+       actor=None,                                     # nincs értelmes Subject
        target=("TargetUserName", "TargetDomainName", "TargetSid"),
        detail_fields=("CallerComputerName",),
    ),

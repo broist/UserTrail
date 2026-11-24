@@ -1,4 +1,4 @@
-"""Source parsers and channel dispatch."""
+"""Forrásparserek és csatorna szerinti szétosztás."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ _BY_CHANNEL: dict[str, RecordParser] = {
 
 
 def parse_record(record: RawRecord) -> Iterator[TimelineEvent]:
-    """Dispatch on ``Event.System.Channel`` (never on the file name)."""
+    """Szétosztás az ``Event.System.Channel`` alapján (sosem a fájlnév alapján)."""
     parser = _BY_CHANNEL.get(record.channel)
     if parser is None:
         return iter(())
