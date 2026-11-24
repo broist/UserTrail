@@ -3,7 +3,7 @@
 import enum
 import sqlite3
 from collections.abc import Iterator
-from datetime import datetime, timedelta, tzinfo
+from datetime import datetime, time, timedelta, tzinfo
 from pathlib import Path
 from typing import Annotated
 
@@ -20,7 +20,15 @@ from rich.progress import (
 from rich.table import Table
 
 from usertrail import __version__, cli_hu
-from usertrail.correlate import DEFAULT_WINDOW, correlate_web, pivot_seeds, seed_time_range
+from usertrail.alerts import AlertConfig, detect_alerts
+from usertrail.correlate import (
+    DEFAULT_COLLAPSE_GAP,
+    DEFAULT_WINDOW,
+    collapse_rows,
+    correlate_web,
+    pivot_seeds,
+    seed_time_range,
+)
 from usertrail.identity import IdentityQuery, SidMap, resolve_sid_only_names
 from usertrail.models import Category, Severity, TimelineEvent
 from usertrail.parsers.evtx_reader import ReadStats
@@ -150,6 +158,48 @@ def timeline(
             "--include-machine-accounts", help="A $ végű gépfiókok eseményei is látszódjanak."
         ),
     ] = False,
+    collapse: Annotated[
+        bool,
+        typer.Option(
+            "--collapse",
+            help=(
+                "Az ismétlődő, zajos események (pl. sok hálózati bejelentkezés ugyanarról "
+                "az IP-ről) összevonása egy sorba."
+            ),
+        ),
+    ] = False,
+    collapse_gap: Annotated[
+        int,
+        typer.Option(
+            "--collapse-gap",
+            min=1,
+            help="Összevonásnál az egymást követő események közti legnagyobb szünet percben.",
+        ),
+    ] = int(DEFAULT_COLLAPSE_GAP.total_seconds() // 60),
+    no_alerts: Annotated[
+        bool, typer.Option("--no-alerts", help="A figyelmeztetések kikapcsolása.")
+    ] = False,
+    fail_threshold: Annotated[
+        int,
+        typer.Option(
+            "--fail-threshold",
+            min=1,
+            help="Ennyi sikertelen bejelentkezés a --fail-window időn belül figyelmeztetést ad.",
+        ),
+    ] = AlertConfig().fail_threshold,
+    fail_window: Annotated[
+        int,
+        typer.Option(
+            "--fail-window", min=1, help="A sikertelen bejelentkezések időablaka percben."
+        ),
+    ] = int(AlertConfig().fail_window.total_seconds() // 60),
+    work_hours: Annotated[
+        str,
+        typer.Option(
+            "--work-hours",
+            help="Munkaidő ÓÓ:PP-ÓÓ:PP alakban (hétköznap, a --tz időzónájában).",
+        ),
+    ] = "07:00-19:00",
     pivot_ip: Annotated[
         bool,
         typer.Option(
@@ -190,6 +240,7 @@ def timeline(
 
     display_tz, start, end = _time_options(tz, from_, to)
     iis_zone = _iis_tz_option(iis_tz)
+    work_start, work_end = _work_hours_option(work_hours)
     window = timedelta(minutes=pivot_window)
     web_pool: list[TimelineEvent] = []
 
@@ -245,10 +296,33 @@ def timeline(
         else:
             correlated = _correlate(events, web_pool, flt, window, rows)
             rows = sorted(rows + correlated, key=lambda row: row.event.sort_key)
+    alerts = []
+    if not no_alerts:
+        # A szabályok a keresett identitás (vagy IP) összes során futnak, a kategória- és
+        # súlyosságszűrőtől függetlenül; csak az időszakszűrő érvényes.
+        alert_filter = TimelineFilter(
+            identity=identity,
+            ip=ip,
+            start=start,
+            end=end,
+            include_machine_accounts=include_machine_accounts,
+        )
+        alert_config = AlertConfig(
+            fail_threshold=fail_threshold,
+            fail_window=timedelta(minutes=fail_window),
+            work_start=work_start,
+            work_end=work_end,
+            tz=display_tz,
+        )
+        alerts = detect_alerts(select(events, alert_filter), alert_config)
+    if collapse:
+        rows = collapse_rows(rows, timedelta(minutes=collapse_gap))
     title = " / ".join(x for x in (user, sid, ip) if x)
-    print_timeline(rows, display_tz, lang.value, f"UserTrail: {title}")
+    print_timeline(rows, display_tz, lang.value, f"UserTrail: {title}", alerts=alerts)
 
     err.print(f"{summary}, ebből {len(rows)} jelenik meg.[/dim]")
+    if alerts:
+        err.print(f"[bold red]{len(alerts)} figyelmeztetés (lásd a Figyelmeztetések táblát).[/]")
     if correlated:
         err.print(
             f"[yellow]{len(correlated)} korrelált webes kérés (±{pivot_window} perc a "
@@ -257,6 +331,22 @@ def timeline(
         )
     if case is None and stats.errors:
         _print_errors(stats.errors, stats.error_samples)
+
+
+def _work_hours_option(value: str) -> tuple[time, time]:
+    """A --work-hours értéke (pl. ``07:00-19:00``)."""
+    try:
+        start_text, end_text = value.split("-", 1)
+        start, end = time.fromisoformat(start_text.strip()), time.fromisoformat(end_text.strip())
+    except ValueError:
+        raise typer.BadParameter(
+            f"érvénytelen munkaidő: {value} (várt alak: ÓÓ:PP-ÓÓ:PP)", param_hint="--work-hours"
+        ) from None
+    if start >= end:
+        raise typer.BadParameter(
+            "a munkaidő kezdete legyen korábbi a végénél", param_hint="--work-hours"
+        )
+    return start, end
 
 
 def _iis_tz_option(iis_tz: str | None) -> tzinfo | None:

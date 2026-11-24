@@ -34,6 +34,19 @@ class TimelineRow:
     role: Role
     # Korrelált soroknál annak a bejelentkezésnek a raw_ref-je, amelyhez kötöttük.
     correlated_with: str | None = None
+    # Összevont (--collapse) sornál az összes összevont esemény; az ``event`` az első.
+    members: tuple[TimelineEvent, ...] = ()
+
+    @property
+    def is_collapsed(self) -> bool:
+        return len(self.members) > 1
+
+    @property
+    def raw_refs(self) -> tuple[str, ...]:
+        """Az összes esemény hivatkozása, amelyet ez a sor képvisel."""
+        if self.members:
+            return tuple(e.raw_ref for e in self.members)
+        return (self.event.raw_ref,)
 
 
 def role_of(event: TimelineEvent, flt: TimelineFilter) -> Role | None:

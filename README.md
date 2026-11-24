@@ -13,9 +13,10 @@ eseményeket. A UserTrail identitásközpontú: egy fiók teljes történetét r
 forrásból, és minden eseménynél jelzi, hogy a fiók **szereplő** volt (ő csinálta) vagy
 **célpont** (vele csinálták).
 
-> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–6. mérföldkő: EVTX- és IIS-naplók
+> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–7. mérföldkő: EVTX- és IIS-naplók
 > betöltése SQLite vizsgálati adatbázisba (SHA-256 hash-sel, duplikáció-szűréssel), illetve
-> közvetlen olvasása, IP-pivot a webes kérésekre, és az alábbi események:
+> közvetlen olvasása, IP-pivot a webes kérésekre, figyelmeztetések, a zajos események
+> összevonása, és az alábbi események:
 >
 > - bejelentkezés: 4624, 4625, 4634, 4647, 4648, 4672
 > - fiókok életciklusa: 4720, 4722, 4725, 4726, 4738, 4781 (átnevezés után a régi és az új
@@ -103,6 +104,32 @@ belül. Ezek **„korrelált (IP)”** jelölést kapnak, mert nem bizonyítják
 felhasználó küldte (ugyanarról az IP-ről mások is dolgozhattak, pl. NAT vagy terminálszerver
 mögül).
 
+### Figyelmeztetések
+
+Az idővonal alatt egy „Figyelmeztetések” tábla jelenik meg, az érintett sorokat pedig „!” jelöli.
+A szabályok a keresett fiók összes eseményén futnak, a `--category` és a `--min-severity`
+szűrőtől függetlenül (csak az időszakszűrő érvényes):
+
+| Szabály | Mikor jelez | Súlyosság |
+|---|---|---|
+| Naplótörlés | Security 1102, System 104 | magas |
+| Kiemelt csoport | Domain/Schema/Enterprise Admins vagy Administrators csoportba vétel | magas |
+| Lehetséges jelszótalálgatás | sikeres bejelentkezés legalább 5 sikertelen után, 5 percen belül | magas |
+| Fiókzárolás | 4740, az előző 30 perc sikertelen próbálkozásaival összekötve | közepes |
+| Sikertelen bejelentkezések | legalább 10 hiba 5 percen belül (`--fail-threshold`, `--fail-window`) | közepes |
+| Jelszó-visszaállítás + új IP | 4724 után 1 órán belül bejelentkezés korábban nem látott IP-ről | közepes |
+| Perzisztencia | új szolgáltatás (7045) vagy ütemezett feladat (4698) a felhasználó nevében | közepes |
+| Munkaidőn kívül | interaktív/RDP-bejelentkezés munkaidőn kívül (`--work-hours`, hétköznap, `--tz` szerint) | alacsony |
+
+Sikertelen bejelentkezésnek számít a 4625, a 4771, a sikertelen 4768 és a sikertelen 4776.
+
+### Zajos események összevonása
+
+A `--collapse` az ismétlődő eseményeket (pl. sok hálózati bejelentkezés vagy Kerberos-jegy
+ugyanarról az IP-ről) egy sorba vonja: „42× sikeres bejelentkezés (3 hálózati): CEG\kovacs.janos,
+forrás: 10.0.0.5 (09:00:00 – 09:15:00)”. Csak az információ és alacsony súlyosságú eseményeket
+vonja össze, legalább 3-at, ha egymást legfeljebb `--collapse-gap` percen belül követik.
+
 Hasznos kapcsolók:
 
 | Kapcsoló | Jelentés |
@@ -115,6 +142,10 @@ Hasznos kapcsolók:
 | `--pivot-ip` | Webes kérések bevonása a bejelentkezési IP-címekről (korrelált jelöléssel) |
 | `--pivot-window` | Az IP-pivot időablaka percben (alapértelmezés: 60) |
 | `--iis-tz` | Az IIS-naplók időzónája, ha nem UTC-ben naplóznak |
+| `--collapse`, `--collapse-gap` | Zajos események összevonása (alapértelmezett szünet: 15 perc) |
+| `--fail-threshold`, `--fail-window` | Sikertelen bejelentkezések küszöbe (10) és időablaka (5 perc) |
+| `--work-hours` | Munkaidő, pl. `07:00-19:00` (hétköznap) |
+| `--no-alerts` | Figyelmeztetések kikapcsolása |
 | `--lang` | A leírások nyelve: `hu` (alapértelmezés) vagy `en` |
 
 Az eszköz a forrásfájlokat mindig csak olvasásra nyitja meg.

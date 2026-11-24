@@ -82,6 +82,33 @@ MESSAGES: dict[str, dict[str, str]] = {
         "rdp_reconnect": "RDP session of {target} reconnected from {src} (session {SessionID})",
         "rdp_auth_success": "RDP network authentication succeeded for {target} from {src}",
         "script_block": "PowerShell script block run by {actor}: {preview}",
+        # --- figyelmeztetések
+        "alert.log_cleared": "Log cleared ({channel}) on {host} by {actor}",
+        "alert.privileged_group_added": (
+            "{member} was added to privileged group {group} (by {actor})"
+        ),
+        "alert.account_locked": (
+            "Account {account} locked out (caller: {caller}); {count} failed attempts in the "
+            "previous {minutes} minutes from: {sources}"
+        ),
+        "alert.failed_logon_burst": (
+            "{count} failed logons for {account}, {first} – {last}, from: {sources}"
+        ),
+        "alert.success_after_failures": (
+            "Successful logon of {account} after {count} failures within {minutes} minutes, "
+            "from {src} – possible password guessing"
+        ),
+        "alert.off_hours_logon": (
+            "Logon outside working hours: {account} at {local_time} "
+            "(working hours: {work_start}–{work_end}, weekdays), from {src}"
+        ),
+        "alert.password_reset_new_ip": (
+            "Logon of {account} from a new IP ({src}) {minutes} minutes after a password "
+            "reset by {actor}"
+        ),
+        "alert.persistence_by_user": "{actor} {kind_text}: {name} on {host}",
+        # --- összevont sorok
+        "collapsed": "{count}× {label}{extra}: {account}, from {src} ({first} – {last})",
         "web_request_user": "Web request by {actor}: {method} {uri} → {status}, client: {src}",
     },
     "hu": {
@@ -156,6 +183,33 @@ MESSAGES: dict[str, dict[str, str]] = {
         ),
         "rdp_auth_success": "Sikeres RDP hálózati hitelesítés: {target}, forrás: {src}",
         "script_block": "PowerShell-szkriptblokk ({actor}): {preview}",
+        # --- figyelmeztetések
+        "alert.log_cleared": "Napló törölve ({channel}) a(z) {host} gépen; végrehajtotta: {actor}",
+        "alert.privileged_group_added": (
+            "{member} kiemelt csoportba került: {group} (végrehajtotta: {actor})"
+        ),
+        "alert.account_locked": (
+            "A(z) {account} fiók zárolva (hívó gép: {caller}); az előző {minutes} percben "
+            "{count} sikertelen próbálkozás, forrás: {sources}"
+        ),
+        "alert.failed_logon_burst": (
+            "{count} sikertelen bejelentkezés: {account}, {first} – {last}, forrás: {sources}"
+        ),
+        "alert.success_after_failures": (
+            "Sikeres bejelentkezés {count} sikertelen után ({minutes} percen belül): {account}, "
+            "forrás: {src} – lehetséges jelszótalálgatás"
+        ),
+        "alert.off_hours_logon": (
+            "Munkaidőn kívüli bejelentkezés: {account}, {local_time} "
+            "(munkaidő: {work_start}–{work_end}, hétköznap), forrás: {src}"
+        ),
+        "alert.password_reset_new_ip": (
+            "Bejelentkezés új IP-ről ({src}) {minutes} perccel a jelszó-visszaállítás után: "
+            "{account} (visszaállította: {actor})"
+        ),
+        "alert.persistence_by_user": "{actor} {kind_text}: {name} ({host})",
+        # --- összevont sorok
+        "collapsed": "{count}× {label}{extra}: {account}, forrás: {src} ({first} – {last})",
         "web_request_user": "Webes kérés ({actor}): {method} {uri} → {status}, kliens: {src}",
     },
 }
@@ -258,6 +312,8 @@ DERIVED_TEXT: dict[str, dict[str, str]] = {
         "scope.local": "local",
         "scope.universal": "universal",
         "privileged": " – PRIVILEGED GROUP: {name}",
+        "kind.service_installed": "installed a new service",
+        "kind.scheduled_task_created": "created a scheduled task",
     },
     "hu": {
         "result.success": "sikeres",
@@ -267,6 +323,8 @@ DERIVED_TEXT: dict[str, dict[str, str]] = {
         "scope.local": "helyi",
         "scope.universal": "univerzális",
         "privileged": " – KIEMELT CSOPORT: {name}",
+        "kind.service_installed": "új szolgáltatást telepített",
+        "kind.scheduled_task_created": "ütemezett feladatot hozott létre",
     },
 }
 
@@ -286,6 +344,22 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "col.description": "Description",
         "header.tz": "Times shown in",
         "no_events": "No matching events.",
+        "col.alert": "!",
+        "col.rule": "Rule",
+        "col.severity": "Severity",
+        "alerts.title": "Alerts",
+        "rule.log_cleared": "Log cleared",
+        "rule.privileged_group_added": "Privileged group",
+        "rule.account_locked": "Account lockout",
+        "rule.failed_logon_burst": "Failed logons",
+        "rule.success_after_failures": "Possible password guessing",
+        "rule.off_hours_logon": "Off-hours logon",
+        "rule.password_reset_new_ip": "Password reset + new IP",
+        "rule.persistence_by_user": "Persistence",
+        "severity.info": "info",
+        "severity.low": "low",
+        "severity.medium": "medium",
+        "severity.high": "high",
     },
     "hu": {
         "role.actor": "szereplő",
@@ -302,8 +376,61 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "col.description": "Leírás",
         "header.tz": "Időzóna",
         "no_events": "Nincs találat.",
+        "col.alert": "!",
+        "col.rule": "Szabály",
+        "col.severity": "Súlyosság",
+        "alerts.title": "Figyelmeztetések",
+        "rule.log_cleared": "Naplótörlés",
+        "rule.privileged_group_added": "Kiemelt csoport",
+        "rule.account_locked": "Fiókzárolás",
+        "rule.failed_logon_burst": "Sikertelen bejelentkezések",
+        "rule.success_after_failures": "Lehetséges jelszótalálgatás",
+        "rule.off_hours_logon": "Munkaidőn kívül",
+        "rule.password_reset_new_ip": "Jelszó-visszaállítás + új IP",
+        "rule.persistence_by_user": "Perzisztencia",
+        "severity.info": "információ",
+        "severity.low": "alacsony",
+        "severity.medium": "közepes",
+        "severity.high": "magas",
     },
 }
+
+
+# Az összevont (--collapse) sorok rövid eseménynevei.
+COLLAPSE_LABELS: dict[str, dict[str, str]] = {
+    "en": {
+        "logon_success": "successful logon",
+        "logon_failure": "failed logon",
+        "logoff": "logoff",
+        "special_privileges": "privileged logon",
+        "kerberos_tgt": "Kerberos TGT",
+        "kerberos_tgt_failure": "failed Kerberos TGT request",
+        "kerberos_service_ticket": "Kerberos service ticket",
+        "kerberos_service_ticket_failure": "failed Kerberos service ticket request",
+        "kerberos_preauth_failed": "failed Kerberos pre-authentication",
+        "ntlm_validation": "NTLM validation",
+        "ntlm_validation_failure": "failed NTLM validation",
+        "web_request": "web request",
+    },
+    "hu": {
+        "logon_success": "sikeres bejelentkezés",
+        "logon_failure": "sikertelen bejelentkezés",
+        "logoff": "kijelentkezés",
+        "special_privileges": "kiemelt jogosultságú bejelentkezés",
+        "kerberos_tgt": "Kerberos TGT",
+        "kerberos_tgt_failure": "sikertelen Kerberos TGT-kérés",
+        "kerberos_service_ticket": "Kerberos szolgáltatásjegy",
+        "kerberos_service_ticket_failure": "sikertelen Kerberos szolgáltatásjegy-kérés",
+        "kerberos_preauth_failed": "sikertelen Kerberos előhitelesítés",
+        "ntlm_validation": "NTLM-ellenőrzés",
+        "ntlm_validation_failure": "sikertelen NTLM-ellenőrzés",
+        "web_request": "webes kérés",
+    },
+}
+
+
+def collapse_label(action: str, lang: str) -> str:
+    return COLLAPSE_LABELS[_lang(lang)].get(action, action)
 
 
 def _lang(lang: str) -> str:
@@ -387,6 +514,8 @@ def render(key: str, params: Mapping[str, Any], lang: str = DEFAULT_LANG) -> str
     if "KerberosStatus" in params:
         values["kerb_status_text"] = kerberos_status_text(params["KerberosStatus"], lang)
     derived = DERIVED_TEXT[lang]
+    if "kind" in params:
+        values["kind_text"] = derived.get(f"kind.{params['kind']}", str(params["kind"]))
     if "Result" in params:
         values["result_text"] = derived[f"result.{params['Result'] or 'unknown'}"]
     if "GroupScope" in params:
