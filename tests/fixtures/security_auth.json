@@ -1,0 +1,175 @@
+[
+  {
+    "Event": {
+      "#attributes": {"xmlns": "http://schemas.microsoft.com/win/2004/08/events/event"},
+      "System": {
+        "Provider": {"#attributes": {"Name": "Microsoft-Windows-Security-Auditing", "Guid": "54849625-5478-4994-A5BA-3E3B0328C30D"}},
+        "EventID": 4625,
+        "Version": 0,
+        "TimeCreated": {"#attributes": {"SystemTime": "2026-11-20T08:59:58.1234567Z"}},
+        "EventRecordID": 101,
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local",
+        "Security": null
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-0-0",
+        "SubjectUserName": "-",
+        "SubjectDomainName": "-",
+        "TargetUserSid": "S-1-0-0",
+        "TargetUserName": "kovacs.janos",
+        "TargetDomainName": "CEG",
+        "Status": "0xc000006d",
+        "FailureReason": "%%2313",
+        "SubStatus": "0xc000006a",
+        "LogonType": 3,
+        "LogonProcessName": "NtLmSsp ",
+        "AuthenticationPackageName": "NTLM",
+        "WorkstationName": "WS-042",
+        "IpAddress": "::ffff:10.0.0.5",
+        "IpPort": "51234"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {"#attributes": {"Name": "Microsoft-Windows-Security-Auditing"}},
+        "EventID": 4624,
+        "TimeCreated": {"#attributes": {"SystemTime": "2026-11-20T09:00:01.000000Z"}},
+        "EventRecordID": 102,
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-5-18",
+        "SubjectUserName": "DC01$",
+        "SubjectDomainName": "CEG",
+        "TargetUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "TargetUserName": "kovacs.janos",
+        "TargetDomainName": "CEG",
+        "TargetLogonId": "0x3e7a1f",
+        "LogonType": 10,
+        "LogonProcessName": "User32 ",
+        "AuthenticationPackageName": "Negotiate",
+        "WorkstationName": "WS-042",
+        "IpAddress": "10.0.0.5",
+        "IpPort": "0",
+        "ElevatedToken": "%%1843"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {"#attributes": {"Name": "Microsoft-Windows-Security-Auditing"}},
+        "EventID": 4672,
+        "TimeCreated": {"#attributes": {"SystemTime": "2026-11-20T09:00:01.000000Z"}},
+        "EventRecordID": 103,
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserName": "kovacs.janos",
+        "SubjectDomainName": "CEG",
+        "SubjectLogonId": "0x3e7a1f",
+        "PrivilegeList": "SeBackupPrivilege\r\n\t\t\tSeDebugPrivilege"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {"#attributes": {"Name": "Microsoft-Windows-Security-Auditing"}},
+        "EventID": {"#attributes": {"Qualifiers": 0}, "#text": 4648},
+        "TimeCreated": {"#attributes": {"SystemTime": "2026-11-20T09:05:00Z"}},
+        "EventRecordID": 104,
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "SubjectUserName": "kovacs.janos",
+        "SubjectDomainName": "CEG",
+        "TargetUserName": "admin.backup",
+        "TargetDomainName": "CEG",
+        "TargetServerName": "FS01.ceg.local",
+        "ProcessName": "C:\\Windows\\System32\\runas.exe",
+        "IpAddress": "-",
+        "IpPort": "-"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {"#attributes": {"Name": "Microsoft-Windows-Security-Auditing"}},
+        "EventID": 4624,
+        "TimeCreated": {"#attributes": {"SystemTime": "2026-11-20T09:10:00Z"}},
+        "EventRecordID": 105,
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "SubjectUserSid": "S-1-0-0",
+        "TargetUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1001",
+        "TargetUserName": "WS-042$",
+        "TargetDomainName": "CEG",
+        "LogonType": 3,
+        "AuthenticationPackageName": "Kerberos",
+        "IpAddress": "10.0.0.5"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {"#attributes": {"Name": "Microsoft-Windows-Security-Auditing"}},
+        "EventID": 4634,
+        "TimeCreated": {"#attributes": {"SystemTime": "2026-11-20T17:30:00Z"}},
+        "EventRecordID": 106,
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "TargetUserName": "kovacs.janos",
+        "TargetDomainName": "CEG",
+        "TargetLogonId": "0x3e7a1f",
+        "LogonType": 10
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {"#attributes": {"Name": "Microsoft-Windows-Security-Auditing"}},
+        "EventID": 4647,
+        "TimeCreated": {"#attributes": {"SystemTime": "2026-11-20T17:29:59Z"}},
+        "EventRecordID": 107,
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {
+        "TargetUserSid": "S-1-5-21-1111111111-2222222222-3333333333-1105",
+        "TargetUserName": "kovacs.janos",
+        "TargetDomainName": "CEG",
+        "TargetLogonId": "0x3e7a1f"
+      }
+    }
+  },
+  {
+    "Event": {
+      "System": {
+        "Provider": {"#attributes": {"Name": "Microsoft-Windows-Eventlog"}},
+        "EventID": 4999,
+        "TimeCreated": {"#attributes": {"SystemTime": "2026-11-20T10:00:00Z"}},
+        "EventRecordID": 108,
+        "Channel": "Security",
+        "Computer": "DC01.ceg.local"
+      },
+      "EventData": {}
+    }
+  }
+]
