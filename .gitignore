@@ -16,3 +16,8 @@ htmlcov/
 *.db-journal
 /cases/
 /evidence/
+
+# Kimentett naplók (bizonyítékok) – a tesztfixture-ök kivételével.
+*.evtx
+*.log
+!tests/fixtures/**

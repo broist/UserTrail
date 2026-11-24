@@ -1,20 +1,33 @@
 """Parancssori felület."""
 
 import enum
+import sqlite3
+from collections.abc import Iterator
+from datetime import datetime, tzinfo
 from pathlib import Path
 from typing import Annotated
 
 import typer
 from rich.console import Console
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeElapsedColumn,
+)
+from rich.table import Table
 
 from usertrail import __version__, cli_hu
 from usertrail.identity import IdentityQuery, SidMap, resolve_sid_only_names
-from usertrail.models import Category, Severity
+from usertrail.models import Category, Severity, TimelineEvent
 from usertrail.parsers.evtx_reader import ReadStats
 from usertrail.pipeline import discover_evtx, iter_events
 from usertrail.query import TimelineFilter, select
 from usertrail.report.console import print_timeline
-from usertrail.timeutil import parse_bound, resolve_tz
+from usertrail.store import CaseStore, StoreError, sha256_file
+from usertrail.timeutil import format_display, parse_bound, resolve_tz, tz_label
 
 cli_hu.apply()
 
@@ -92,7 +105,7 @@ def timeline(
         ),
     ] = None,
     case: Annotated[
-        Path | None, typer.Option("--case", help="Vizsgálati adatbázis (a 4. mérföldkőtől).")
+        Path | None, typer.Option("--case", help="Vizsgálati adatbázis (lásd: ingest).")
     ] = None,
     user: Annotated[
         str | None,
@@ -139,42 +152,47 @@ def timeline(
     lang: Annotated[Lang, typer.Option("--lang", help="A leírások nyelve.")] = Lang.hu,
 ) -> None:
     """Egy fiók (vagy egy forrás-IP) idővonalának megjelenítése."""
-    if case is not None:
-        _not_yet(4)
-    if not source:
-        raise typer.BadParameter("adj meg legalább egy --source útvonalat", param_hint="--source")
+    if case is not None and source:
+        raise typer.BadParameter("a --case és a --source közül csak az egyiket add meg")
+    if case is None and not source:
+        raise typer.BadParameter("adj meg --case adatbázist vagy --source útvonalat")
     if not (user or sid or ip):
         raise typer.BadParameter("adj meg --user, --sid vagy --ip kapcsolót")
 
-    try:
-        display_tz = resolve_tz(tz)
-    except ValueError:
-        raise typer.BadParameter(f"ismeretlen időzóna: {tz}", param_hint="--tz") from None
-    try:
-        start = parse_bound(from_, display_tz) if from_ else None
-    except ValueError:
-        raise typer.BadParameter(f"érvénytelen időpont: {from_}", param_hint="--from") from None
-    try:
-        end = parse_bound(to, display_tz, end=True) if to else None
-    except ValueError:
-        raise typer.BadParameter(f"érvénytelen időpont: {to}", param_hint="--to") from None
+    display_tz, start, end = _time_options(tz, from_, to)
 
-    files = discover_evtx(source)
-    if not files:
-        err.print("[red]Nem található .evtx fájl.[/red]")
-        raise typer.Exit(code=1)
+    if case is not None:
+        with _open_case(case) as store:
+            sid_map = store.sid_map()
+            identity = IdentityQuery.build(user, sid, sid_map) if (user or sid) else None
+            events = store.candidate_events(
+                names=identity.names if identity else (),
+                sids=identity.sids if identity else (),
+                ip=ip,
+                start=start,
+                end=end,
+            )
+            summary = f"[dim]{case}: {len(events)} jelölt esemény"
+    else:
+        assert source is not None
+        files = discover_evtx(source)
+        if not files:
+            err.print("[red]Nem található .evtx fájl.[/red]")
+            raise typer.Exit(code=1)
+        stats = ReadStats()
+        with err.status(f"{len(files)} EVTX-fájl beolvasása..."):
+            events = list(iter_events(files, stats))
+        sid_map = SidMap()
+        for event in events:
+            sid_map.learn_event(event)
+        identity = IdentityQuery.build(user, sid, sid_map) if (user or sid) else None
+        summary = (
+            f"[dim]{len(files)} fájlból {stats.records} rekord beolvasva, "
+            f"{len(events)} leképezett esemény"
+        )
 
-    stats = ReadStats()
-    with err.status(f"{len(files)} EVTX-fájl beolvasása..."):
-        events = list(iter_events(files, stats))
-
-    sid_map = SidMap()
-    for event in events:
-        sid_map.learn_event(event)
     for event in events:
         resolve_sid_only_names(event, sid_map)
-
-    identity = IdentityQuery.build(user, sid, sid_map) if (user or sid) else None
     flt = TimelineFilter(
         identity=identity,
         ip=ip,
@@ -188,23 +206,126 @@ def timeline(
     title = " / ".join(x for x in (user, sid, ip) if x)
     print_timeline(rows, display_tz, lang.value, f"UserTrail: {title}")
 
-    err.print(
-        f"[dim]{len(files)} fájlból {stats.records} rekord beolvasva, "
-        f"{len(events)} leképezett esemény, ebből {len(rows)} jelenik meg.[/dim]"
-    )
-    if stats.errors:
-        err.print(f"[yellow]{stats.errors} rekordot nem sikerült feldolgozni:[/yellow]")
-        for sample in stats.error_samples:
-            err.print(f"  [yellow]- {sample}[/yellow]")
+    err.print(f"{summary}, ebből {len(rows)} jelenik meg.[/dim]")
+    if case is None and stats.errors:
+        _print_errors(stats.errors, stats.error_samples)
+
+
+def _time_options(
+    tz: str | None, from_: str | None, to: str | None
+) -> tuple[tzinfo | None, datetime | None, datetime | None]:
+    try:
+        display_tz = resolve_tz(tz)
+    except ValueError:
+        raise typer.BadParameter(f"ismeretlen időzóna: {tz}", param_hint="--tz") from None
+    try:
+        start = parse_bound(from_, display_tz) if from_ else None
+    except ValueError:
+        raise typer.BadParameter(f"érvénytelen időpont: {from_}", param_hint="--from") from None
+    try:
+        end = parse_bound(to, display_tz, end=True) if to else None
+    except ValueError:
+        raise typer.BadParameter(f"érvénytelen időpont: {to}", param_hint="--to") from None
+    return display_tz, start, end
+
+
+def _open_case(case: Path, *, create: bool = False) -> CaseStore:
+    try:
+        return CaseStore.open(case, create=create)
+    except StoreError as exc:
+        err.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1) from None
+    except sqlite3.DatabaseError as exc:
+        err.print(f"[red]A(z) {case} nem olvasható vizsgálati adatbázisként: {exc}[/red]")
+        raise typer.Exit(code=1) from None
+
+
+def _print_errors(count: int, samples: list[str]) -> None:
+    err.print(f"[yellow]{count} rekordot nem sikerült feldolgozni:[/yellow]")
+    for sample in samples:
+        err.print(f"  [yellow]- {sample}[/yellow]")
+    if count > len(samples):
+        err.print(f"  [yellow]... és további {count - len(samples)}[/yellow]")
 
 
 @app.command()
 def ingest(
-    paths: Annotated[list[Path], typer.Argument(help="Beolvasandó fájlok vagy mappák.")],
+    paths: Annotated[
+        list[Path], typer.Argument(exists=True, help="Beolvasandó fájlok vagy mappák.")
+    ],
     case: Annotated[Path, typer.Option("--case", help="Vizsgálati adatbázisfájl.")],
 ) -> None:
-    """EVTX- és IIS-naplók betöltése egy vizsgálati adatbázisba."""
-    _not_yet(4)
+    """EVTX-naplók betöltése egy vizsgálati adatbázisba (a mappákat rekurzívan bejárja).
+
+    Minden fájl SHA-256 hash-e feldolgozás előtt rögzítésre kerül; a már betöltött
+    fájlokat (azonos hash) kihagyja.
+    """
+    files = discover_evtx(paths)
+    if not files:
+        err.print("[red]Nem található .evtx fájl.[/red]")
+        raise typer.Exit(code=1)
+
+    results: list[tuple[str, str, int, int, int]] = []
+    total_errors = 0
+    with _open_case(case, create=True) as store:
+        progress = Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            MofNCompleteColumn(),
+            TextColumn("{task.fields[records]} rekord"),
+            TimeElapsedColumn(),
+            console=err,
+        )
+        with progress:
+            overall = progress.add_task("Fájlok", total=len(files), records=0)
+            for path in files:
+                progress.update(overall, description=f"Hash: {path.name}")
+                digest = sha256_file(path)
+                existing = store.find_source(digest)
+                if existing is not None and existing.completed:
+                    results.append((str(path), "már betöltve", existing.records, 0, 0))
+                    progress.advance(overall)
+                    continue
+                if existing is not None:
+                    # Félbeszakadt korábbi feldolgozás: a részleges adatokat eldobjuk.
+                    store.discard_source(existing.id)
+
+                progress.update(overall, description=f"Feldolgozás: {path.name}")
+                source_id = store.add_source(path, path.stat().st_size, digest, "evtx")
+                stats = ReadStats()
+
+                def counted(path: Path = path, stats: ReadStats = stats) -> Iterator[TimelineEvent]:
+                    for number, event in enumerate(iter_events([path], stats), start=1):
+                        if number % 1000 == 0:
+                            progress.update(overall, records=stats.records)
+                        yield event
+
+                inserted = store.insert_events(source_id, counted())
+                store.finish_source(
+                    source_id, stats.records, inserted, stats.errors, stats.error_samples
+                )
+                total_errors += stats.errors
+                results.append((str(path), "betöltve", stats.records, inserted, stats.errors))
+                if stats.errors:
+                    _print_errors(stats.errors, stats.error_samples)
+                progress.update(overall, records=stats.records)
+                progress.advance(overall)
+        event_total = store.event_count()
+
+    table = Table(title=f"Betöltés: {case}")
+    table.add_column("Fájl")
+    table.add_column("Állapot")
+    table.add_column("Rekord", justify="right")
+    table.add_column("Esemény", justify="right")
+    table.add_column("Hiba", justify="right")
+    for path_text, status, records, events, errors in results:
+        style = "yellow" if errors else ("dim" if status == "már betöltve" else "")
+        table.add_row(path_text, status, str(records), str(events), str(errors), style=style)
+    Console().print(table)
+    err.print(f"[dim]Az adatbázisban összesen {event_total} esemény van.[/dim]")
+    if total_errors:
+        err.print(f"[yellow]Összesen {total_errors} hibás rekord (lásd fent).[/yellow]")
 
 
 @app.command()
@@ -214,9 +335,49 @@ def sources(case: Annotated[Path, typer.Option("--case")]) -> None:
 
 
 @app.command()
-def users(case: Annotated[Path, typer.Option("--case")]) -> None:
+def users(
+    case: Annotated[Path, typer.Option("--case", help="Vizsgálati adatbázisfájl.")],
+    tz: Annotated[
+        str | None,
+        typer.Option("--tz", help="Megjelenítési időzóna (alapértelmezés: helyi idő)."),
+    ] = None,
+    include_machine_accounts: Annotated[
+        bool,
+        typer.Option("--include-machine-accounts", help="A $ végű gépfiókok is látszódjanak."),
+    ] = False,
+) -> None:
     """A vizsgálatban ismert összes identitás listája."""
-    _not_yet(4)
+    display_tz, _, _ = _time_options(tz, None, None)
+    with _open_case(case) as store:
+        identities = store.identities(include_machine_accounts=include_machine_accounts)
+
+    table = Table(title=f"Ismert identitások: {case}", caption=f"Időzóna: {tz_label(display_tz)}")
+    table.add_column("Fiók")
+    table.add_column("Tartomány")
+    table.add_column("SID")
+    table.add_column("Szereplő", justify="right")
+    table.add_column("Célpont", justify="right")
+    table.add_column("Első esemény", no_wrap=True)
+    table.add_column("Utolsó esemény", no_wrap=True)
+    table.add_column("Megjegyzés")
+    for item in identities:
+        notes = [n for n in (item.label, "gépfiók" if item.is_machine else None) if n]
+        table.add_row(
+            " / ".join(sorted(item.names, key=str.casefold)) or "-",
+            ", ".join(sorted(item.domains)) or "-",
+            item.sid or "-",
+            str(item.as_actor),
+            str(item.as_target),
+            _fmt_stored(item.first_seen, display_tz),
+            _fmt_stored(item.last_seen, display_tz),
+            ", ".join(notes),
+        )
+    Console().print(table)
+    err.print(f"[dim]{len(identities)} identitás.[/dim]")
+
+
+def _fmt_stored(value: str | None, display_tz: tzinfo | None) -> str:
+    return format_display(datetime.fromisoformat(value), display_tz) if value else "-"
 
 
 @app.command()
