@@ -93,12 +93,7 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           VERSION="${TAG#v}"
-          awk -v v="$VERSION" '
-            $0 ~ "^## \[" v "\]" {on=1; next}
-            on && /^## \[/ {exit}
-            on && /^\[[^]]+\]: / {next}
-            on {print}
-          ' CHANGELOG.md > notes.md
+          python packaging/release_notes.py "$VERSION" > notes.md
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" assets/* --clobber
           else
