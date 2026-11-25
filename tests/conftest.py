@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -8,6 +9,27 @@ import pytest
 from tests.helpers import load_records, parse_all
 from usertrail.models import TimelineEvent
 from usertrail.parsers.evtx_reader import RawRecord, ReadStats
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Egyszerű szöveges CLI-kimenet a CI-ban is.
+
+    A typer GitHub Actions alatt (GITHUB_ACTIONS, FORCE_COLOR, PY_COLORS) terminálnak
+    tekinti a kimenetet, és ANSI-színkódokat tesz a hibaüzenetekbe; a rich a FORCE_COLOR
+    hatására szintén. Ez szétszabdalja a tesztekben keresett szövegeket. A hook a
+    tesztmodulok (és így a typer és a CLI) betöltése előtt fut.
+    """
+    os.environ["_TYPER_FORCE_DISABLE_TERMINAL"] = "1"
+    for variable in ("FORCE_COLOR", "PY_COLORS", "TTY_COMPATIBLE"):
+        os.environ.pop(variable, None)
+
+
+@pytest.fixture(autouse=True)
+def _plain_typer_output(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Biztosíték arra az esetre, ha a typer már a fenti beállítás előtt betöltődött."""
+    from typer import rich_utils
+
+    monkeypatch.setattr(rich_utils, "FORCE_TERMINAL", False)
 
 
 @pytest.fixture
