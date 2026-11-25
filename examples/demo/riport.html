@@ -1,0 +1,1739 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="UserTrail 0.1.0">
+<title>UserTrail idővonal: kovacs.janos</title>
+<style>
+:root {
+  --bg: #f7f7f5; --panel: #ffffff; --text: #1d1d1f; --muted: #66666e; --border: #dcdcd8;
+  --accent: #2f5fd0; --row-hover: #f0f2f8; --code-bg: #f1f1ee;
+  --sev-low: #0b7285; --sev-medium: #a35d00; --sev-high: #c0262d;
+  --role-actor: #8a2fa8; --role-target: #2f5fd0; --role-corr: #a35d00;
+  --c-ACCOUNT_LIFECYCLE: #4c6ef5; --c-AUTHENTICATION: #1c7ed6; --c-PASSWORD: #ae3ec9;
+  --c-LOCKOUT: #e8590c; --c-GROUP_MEMBERSHIP: #7048e8; --c-PRIVILEGE: #d6336c;
+  --c-REMOTE_ACCESS: #0ca678; --c-EXECUTION: #f08c00; --c-PERSISTENCE: #c92a2a;
+  --c-WEB: #1098ad; --c-LOG_TAMPERING: #862e9c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16171a; --panel: #1f2024; --text: #e8e8ea; --muted: #a0a0a8; --border: #34353b;
+    --accent: #7ea2ff; --row-hover: #26282e; --code-bg: #141518;
+    --sev-low: #4fc3d4; --sev-medium: #f0a64a; --sev-high: #ff6b6b;
+    --role-actor: #d48cf0; --role-target: #7ea2ff; --role-corr: #f0a64a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #16171a; --panel: #1f2024; --text: #e8e8ea; --muted: #a0a0a8; --border: #34353b;
+  --accent: #7ea2ff; --row-hover: #26282e; --code-bg: #141518;
+  --sev-low: #4fc3d4; --sev-medium: #f0a64a; --sev-high: #ff6b6b;
+  --role-actor: #d48cf0; --role-target: #7ea2ff; --role-corr: #f0a64a;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 1400px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 17px; margin: 32px 0 12px; }
+.muted { color: var(--muted); }
+.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.header { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+.meta { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin-top: 12px; }
+.meta dt { color: var(--muted); }
+.meta dd { margin: 0; overflow-wrap: anywhere; }
+button, select, input { font: inherit; color: var(--text); background: var(--panel);
+  border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; }
+button { cursor: pointer; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.stat { font-size: 26px; font-weight: 600; }
+.bar-row { display: grid; grid-template-columns: 150px 1fr 48px; gap: 8px; align-items: center; margin: 4px 0; }
+.bar { height: 10px; border-radius: 5px; background: var(--border); overflow: hidden; }
+.bar > span { display: block; height: 100%; }
+.right { text-align: right; font-variant-numeric: tabular-nums; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.filters input[type="search"] { flex: 1 1 240px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border-bottom: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; }
+th { position: sticky; top: 0; background: var(--panel); font-weight: 600; z-index: 1; }
+tbody tr:hover { background: var(--row-hover); }
+td.time { white-space: nowrap; font-variant-numeric: tabular-nums; }
+td.ip { white-space: nowrap; overflow-wrap: normal; }
+.cat { display: inline-block; padding: 1px 6px; border-radius: 4px; color: #fff; font-size: 12px; white-space: nowrap; }
+.role { font-weight: 600; white-space: nowrap; }
+.role-actor, .role-both { color: var(--role-actor); }
+.role-target { color: var(--role-target); }
+.role-related { color: var(--muted); }
+.role-correlated { color: var(--role-corr); font-style: italic; }
+.sev-low td.desc { color: var(--sev-low); }
+.sev-medium td.desc { color: var(--sev-medium); }
+.sev-high td.desc { color: var(--sev-high); font-weight: 600; }
+td.desc details { color: var(--text); font-weight: normal; }
+.sev-badge { white-space: nowrap; }
+.sev-badge.low { color: var(--sev-low); } .sev-badge.medium { color: var(--sev-medium); }
+.sev-badge.high { color: var(--sev-high); font-weight: 600; }
+.mark { color: var(--sev-high); font-weight: 700; }
+details summary { cursor: pointer; color: var(--accent); }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px;
+  overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0 0; font-size: 12px; }
+code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px; overflow-wrap: anywhere; }
+.note { border-left: 4px solid var(--role-corr); padding: 8px 12px; margin: 12px 0; background: var(--panel); }
+.hidden { display: none; }
+@media (max-width: 700px) {
+  .bar-row { grid-template-columns: 110px 1fr 40px; }
+  td.host, th.host { display: none; }
+}
+@media print {
+  .filters, #theme-toggle { display: none; }
+  th { position: static; }
+}
+</style>
+</head>
+<body>
+<main>
+<div class="header">
+  <div>
+    <h1>UserTrail idővonal: kovacs.janos</h1>
+    <div class="muted">Időzóna: <strong>Europe/Budapest</strong></div>
+  </div>
+  <button id="theme-toggle" type="button">Világos / sötét</button>
+</div>
+
+<div class="panel" style="margin-top:16px">
+  <dl class="meta">
+    <dt>Készült</dt><dd>2026-11-25T08:34:51.894629+00:00 (UTC)</dd>
+    <dt>Eszközverzió</dt><dd>UserTrail 0.1.0</dd>
+    <dt>Időzóna</dt><dd>Europe/Budapest</dd>
+  </dl>
+  <details style="margin-top:8px">
+    <summary>Futtatási paraméterek</summary>
+    <pre>{
+  &#34;user&#34;: &#34;kovacs.janos&#34;,
+  &#34;case&#34;: &#34;examples\\demo\\demo-case.db&#34;,
+  &#34;tz&#34;: &#34;Europe/Budapest&#34;,
+  &#34;min_severity&#34;: &#34;info&#34;,
+  &#34;include_machine_accounts&#34;: false,
+  &#34;pivot_ip&#34;: true,
+  &#34;pivot_window_minutes&#34;: 60,
+  &#34;collapse&#34;: true,
+  &#34;collapse_gap_minutes&#34;: 15,
+  &#34;alerts&#34;: true,
+  &#34;fail_threshold&#34;: 10,
+  &#34;fail_window_minutes&#34;: 5,
+  &#34;work_hours&#34;: &#34;07:00-19:00&#34;
+}</pre>
+  </details>
+</div>
+
+<h2>Összefoglaló</h2>
+<div class="cards">
+  <div class="panel">
+    <div class="muted">Időszak</div>
+<div>2026-11-01 09:00:00 – 2026-11-21 22:30:00</div>    <div style="margin-top:12px" class="muted">Események / Sorok</div>
+    <div class="stat">65 / 47</div>
+    <div style="margin-top:12px" class="muted">Figyelmeztetések</div>
+    <div class="stat" style="color:var(--sev-high)">9</div>
+  </div>
+  <div class="panel">
+    <div class="muted">Események kategóriánként</div>
+    <div class="bar-row">
+      <span>Fiók életciklusa</span>
+      <span class="bar"><span style="width:9%;background:var(--c-ACCOUNT_LIFECYCLE)"></span></span>
+      <span class="right">6</span>
+    </div>
+    <div class="bar-row">
+      <span>Hitelesítés</span>
+      <span class="bar"><span style="width:52%;background:var(--c-AUTHENTICATION)"></span></span>
+      <span class="right">34</span>
+    </div>
+    <div class="bar-row">
+      <span>Jelszó</span>
+      <span class="bar"><span style="width:3%;background:var(--c-PASSWORD)"></span></span>
+      <span class="right">2</span>
+    </div>
+    <div class="bar-row">
+      <span>Zárolás</span>
+      <span class="bar"><span style="width:3%;background:var(--c-LOCKOUT)"></span></span>
+      <span class="right">2</span>
+    </div>
+    <div class="bar-row">
+      <span>Csoporttagság</span>
+      <span class="bar"><span style="width:5%;background:var(--c-GROUP_MEMBERSHIP)"></span></span>
+      <span class="right">3</span>
+    </div>
+    <div class="bar-row">
+      <span>Jogosultság</span>
+      <span class="bar"><span style="width:2%;background:var(--c-PRIVILEGE)"></span></span>
+      <span class="right">1</span>
+    </div>
+    <div class="bar-row">
+      <span>Távoli hozzáférés</span>
+      <span class="bar"><span style="width:8%;background:var(--c-REMOTE_ACCESS)"></span></span>
+      <span class="right">5</span>
+    </div>
+    <div class="bar-row">
+      <span>Futtatás</span>
+      <span class="bar"><span style="width:8%;background:var(--c-EXECUTION)"></span></span>
+      <span class="right">5</span>
+    </div>
+    <div class="bar-row">
+      <span>Perzisztencia</span>
+      <span class="bar"><span style="width:3%;background:var(--c-PERSISTENCE)"></span></span>
+      <span class="right">2</span>
+    </div>
+    <div class="bar-row">
+      <span>Web</span>
+      <span class="bar"><span style="width:5%;background:var(--c-WEB)"></span></span>
+      <span class="right">3</span>
+    </div>
+    <div class="bar-row">
+      <span>Naplómanipuláció</span>
+      <span class="bar"><span style="width:3%;background:var(--c-LOG_TAMPERING)"></span></span>
+      <span class="right">2</span>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="muted">Események súlyosság szerint</div>
+    <div class="bar-row">
+      <span class="sev-badge info">információ</span>
+      <span></span>
+      <span class="right">32</span>
+    </div>
+    <div class="bar-row">
+      <span class="sev-badge low">alacsony</span>
+      <span></span>
+      <span class="right">23</span>
+    </div>
+    <div class="bar-row">
+      <span class="sev-badge medium">közepes</span>
+      <span></span>
+      <span class="right">7</span>
+    </div>
+    <div class="bar-row">
+      <span class="sev-badge high">magas</span>
+      <span></span>
+      <span class="right">3</span>
+    </div>
+  </div>
+</div>
+
+<h2>Figyelmeztetések</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Idő</th><th>Súlyosság</th><th>Szabály</th><th>Leírás</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="time">2026-11-03 11:00:00</td>
+      <td><span class="sev-badge high">magas</span></td>
+      <td>Kiemelt csoport</td>
+      <td>Kovács János kiemelt csoportba került: CEG\Domain Admins (végrehajtotta: CEG\rendszergazda)
+        <details><summary>Eredeti rekord</summary><pre>DC01/Security-archiv.evtx#206</pre></details>
+      </td>
+    </tr>
+    <tr>
+      <td class="time">2026-11-04 10:15:00</td>
+      <td><span class="sev-badge medium">közepes</span></td>
+      <td>Fiókzárolás</td>
+      <td>A(z) kovacs.janos fiók zárolva (hívó gép: WS-042); az előző 30 percből nem látszik sikertelen próbálkozás ebben a vizsgálatban (a hibák másik tartományvezérlőn is naplózódhattak)
+        <details><summary>Eredeti rekord</summary><pre>DC01/Security-archiv.evtx#209</pre></details>
+      </td>
+    </tr>
+    <tr>
+      <td class="time">2026-11-20 08:40:00</td>
+      <td><span class="sev-badge medium">közepes</span></td>
+      <td>Sikertelen bejelentkezések</td>
+      <td>12 sikertelen bejelentkezés: CEG\kovacs.janos, 2026-11-20 08:40:00 – 2026-11-20 08:41:50, forrás: 10.0.0.66
+        <details><summary>Eredeti rekord</summary><pre>DC01/Security-kiegeszites.evtx#901
+DC01/Security-kiegeszites.evtx#902
+DC01/Security-kiegeszites.evtx#903
+DC01/Security-kiegeszites.evtx#904
+DC01/Security-kiegeszites.evtx#905
+DC01/Security-kiegeszites.evtx#906
+DC01/Security-kiegeszites.evtx#907
+DC01/Security-kiegeszites.evtx#908
+DC01/Security-kiegeszites.evtx#909
+DC01/Security-kiegeszites.evtx#910
+DC01/Security-kiegeszites.evtx#911
+DC01/Security-kiegeszites.evtx#912</pre></details>
+      </td>
+    </tr>
+    <tr>
+      <td class="time">2026-11-20 08:42:30</td>
+      <td><span class="sev-badge high">magas</span></td>
+      <td>Lehetséges jelszótalálgatás</td>
+      <td>Sikeres bejelentkezés 12 sikertelen után (5 percen belül): CEG\kovacs.janos, forrás: 10.0.0.66 – lehetséges jelszótalálgatás
+        <details><summary>Eredeti rekord</summary><pre>DC01/Security-kiegeszites.evtx#901
+DC01/Security-kiegeszites.evtx#902
+DC01/Security-kiegeszites.evtx#903
+DC01/Security-kiegeszites.evtx#904
+DC01/Security-kiegeszites.evtx#905
+DC01/Security-kiegeszites.evtx#906
+DC01/Security-kiegeszites.evtx#907
+DC01/Security-kiegeszites.evtx#908
+DC01/Security-kiegeszites.evtx#909
+DC01/Security-kiegeszites.evtx#910
+DC01/Security-kiegeszites.evtx#911
+DC01/Security-kiegeszites.evtx#912
+DC01/Security-kiegeszites.evtx#913</pre></details>
+      </td>
+    </tr>
+    <tr>
+      <td class="time">2026-11-20 10:02:00</td>
+      <td><span class="sev-badge medium">közepes</span></td>
+      <td>Perzisztencia</td>
+      <td>CEG\kovacs.janos ütemezett feladatot hozott létre: \Frissites (DC01.ceg.local)
+        <details><summary>Eredeti rekord</summary><pre>WS-042/egyeb-csatornak.evtx#309</pre></details>
+      </td>
+    </tr>
+    <tr>
+      <td class="time">2026-11-20 10:03:00</td>
+      <td><span class="sev-badge medium">közepes</span></td>
+      <td>Perzisztencia</td>
+      <td>janos.kovacs / kovacs.janos (S-1-5-21-1111111111-2222222222-3333333333-1105) új szolgáltatást telepített: UpdaterSvc (DC01.ceg.local)
+        <details><summary>Eredeti rekord</summary><pre>WS-042/egyeb-csatornak.evtx#310</pre></details>
+      </td>
+    </tr>
+    <tr>
+      <td class="time">2026-11-20 13:00:00</td>
+      <td><span class="sev-badge high">magas</span></td>
+      <td>Naplótörlés</td>
+      <td>Napló törölve (Security) a(z) DC01.ceg.local gépen; végrehajtotta: CEG\kovacs.janos
+        <details><summary>Eredeti rekord</summary><pre>WS-042/egyeb-csatornak.evtx#307</pre></details>
+      </td>
+    </tr>
+    <tr>
+      <td class="time">2026-11-20 13:00:05</td>
+      <td><span class="sev-badge high">magas</span></td>
+      <td>Naplótörlés</td>
+      <td>Napló törölve (System) a(z) DC01.ceg.local gépen; végrehajtotta: CEG\kovacs.janos
+        <details><summary>Eredeti rekord</summary><pre>WS-042/egyeb-csatornak.evtx#311</pre></details>
+      </td>
+    </tr>
+    <tr>
+      <td class="time">2026-11-21 22:30:00</td>
+      <td><span class="sev-badge low">alacsony</span></td>
+      <td>Munkaidőn kívül</td>
+      <td>Munkaidőn kívüli bejelentkezés: CEG\kovacs.janos, 2026-11-21 22:30:00 (munkaidő: 07:00–19:00, hétköznap), forrás: 10.0.0.5
+        <details><summary>Eredeti rekord</summary><pre>DC01/Security-kiegeszites.evtx#922</pre></details>
+      </td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Idővonal</h2>
+<div class="note">A „korrelált (IP)” jelölésű sorokat csak a forrás-IP és az időablak köti a fiók egy bejelentkezéséhez; nem bizonyítják, hogy a kérést ugyanaz a személy küldte.</div><div class="filters">
+  <input id="f-search" type="search" placeholder="Keresés…">
+  <select id="f-category">
+    <option value="">Minden kategória</option>
+<option value="ACCOUNT_LIFECYCLE">Fiók életciklusa</option><option value="AUTHENTICATION">Hitelesítés</option><option value="PASSWORD">Jelszó</option><option value="LOCKOUT">Zárolás</option><option value="GROUP_MEMBERSHIP">Csoporttagság</option><option value="PRIVILEGE">Jogosultság</option><option value="REMOTE_ACCESS">Távoli hozzáférés</option><option value="EXECUTION">Futtatás</option><option value="PERSISTENCE">Perzisztencia</option><option value="WEB">Web</option><option value="LOG_TAMPERING">Naplómanipuláció</option>  </select>
+  <select id="f-role">
+    <option value="">Minden szerep</option>
+<option value="actor">szereplő</option><option value="target">célpont</option><option value="both">szereplő+célpont</option><option value="related">kapcsolódó (IP)</option><option value="correlated">korrelált (IP)</option>  </select>
+  <label>Legalacsonyabb súlyosság
+    <select id="f-severity">
+<option value="0">információ</option><option value="1">alacsony</option><option value="2">közepes</option><option value="3">magas</option>    </select>
+  </label>
+  <label><input id="f-alerts" type="checkbox"> Csak a figyelmeztetéses sorok</label>
+  <span class="muted"><span id="f-count">47</span> látható</span>
+</div>
+<div class="table-wrap">
+<table id="timeline">
+  <thead>
+    <tr><th></th><th>Idő</th><th>Forrás</th><th class="host">Gép</th>
+      <th>Esemény</th><th>Szerep</th><th>IP</th><th>Leírás</th></tr>
+  </thead>
+  <tbody>
+    <tr class="sev-low" data-category="ACCOUNT_LIFECYCLE" data-role="target"
+        data-sev="1" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-01 09:00:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-ACCOUNT_LIFECYCLE)">Fiók életciklusa</span><br>
+        <span class="mono">4720 account_created</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\rendszergazda létrehozta a(z) CEG\kovacs.janos fiókot
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>alacsony</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-01T08:00:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\rendszergazda <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1200)</span></dd><dt>célpont</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#201</dd>
+          </dl>
+          <pre>{
+  &#34;DisplayName&#34;: &#34;Kovács János&#34;,
+  &#34;SamAccountName&#34;: &#34;kovacs.janos&#34;,
+  &#34;UserAccountControl&#34;: &#34;%%2080&#34;,
+  &#34;UserPrincipalName&#34;: &#34;kovacs.janos@ceg.hu&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="ACCOUNT_LIFECYCLE" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-01 09:00:01</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-ACCOUNT_LIFECYCLE)">Fiók életciklusa</span><br>
+        <span class="mono">4722 account_enabled</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\rendszergazda engedélyezte a(z) CEG\kovacs.janos fiókot
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-01T08:00:01+00:00</dd>
+<dt>szereplő</dt><dd>CEG\rendszergazda <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1200)</span></dd><dt>célpont</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#202</dd>
+          </dl>
+          <pre>{}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="ACCOUNT_LIFECYCLE" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-01 09:00:02</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-ACCOUNT_LIFECYCLE)">Fiók életciklusa</span><br>
+        <span class="mono">4738 account_changed</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\rendszergazda módosította a(z) CEG\kovacs.janos fiókot (változott: DisplayName, UserPrincipalName, UserAccountControl)
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-01T08:00:02+00:00</dd>
+<dt>szereplő</dt><dd>CEG\rendszergazda <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1200)</span></dd><dt>célpont</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#203</dd>
+          </dl>
+          <pre>{
+  &#34;ChangedAttributes&#34;: [
+    &#34;DisplayName&#34;,
+    &#34;UserPrincipalName&#34;,
+    &#34;UserAccountControl&#34;
+  ],
+  &#34;DisplayName&#34;: &#34;Kovács János&#34;,
+  &#34;NewUacValue&#34;: &#34;0x10&#34;,
+  &#34;OldUacValue&#34;: &#34;0x15&#34;,
+  &#34;UserAccountControl&#34;: &#34;%%2048&#34;,
+  &#34;UserPrincipalName&#34;: &#34;kovacs.janos@ceg.hu&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-medium" data-category="PASSWORD" data-role="target"
+        data-sev="2" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-01 09:00:03</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-PASSWORD)">Jelszó</span><br>
+        <span class="mono">4724 password_reset</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\rendszergazda visszaállította a(z) CEG\kovacs.janos jelszavát (sikeres)
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>közepes</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-01T08:00:03+00:00</dd>
+<dt>szereplő</dt><dd>CEG\rendszergazda <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1200)</span></dd><dt>célpont</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#204</dd>
+          </dl>
+          <pre>{
+  &#34;Result&#34;: &#34;success&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-low" data-category="PASSWORD" data-role="both"
+        data-sev="1" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-02 08:30:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-PASSWORD)">Jelszó</span><br>
+        <span class="mono">4723 password_change_attempt</span></td>
+      <td><span class="role role-both">szereplő+célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\kovacs.janos megkísérelte módosítani a(z) CEG\kovacs.janos jelszavát (sikertelen)
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>alacsony</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-02T07:30:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd><dt>célpont</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#205</dd>
+          </dl>
+          <pre>{
+  &#34;Result&#34;: &#34;failure&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-high" data-category="GROUP_MEMBERSHIP" data-role="target"
+        data-sev="3" data-alert="1">
+      <td class="mark" title="Kiemelt csoport">!</td>
+      <td class="time">2026-11-03 11:00:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-GROUP_MEMBERSHIP)">Csoporttagság</span><br>
+        <span class="mono">4728 group_member_added</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\rendszergazda hozzáadta Kovács János tagot a(z) CEG\Domain Admins globális csoporthoz – KIEMELT CSOPORT: Domain Admins
+<div class="sev-badge high">! Kiemelt csoport</div>        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>magas</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-03T10:00:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\rendszergazda <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1200)</span></dd><dt>célpont</dt><dd>Kovács János <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#206</dd>
+          </dl>
+          <pre>{
+  &#34;GroupDomain&#34;: &#34;CEG&#34;,
+  &#34;GroupName&#34;: &#34;Domain Admins&#34;,
+  &#34;GroupScope&#34;: &#34;global&#34;,
+  &#34;GroupSid&#34;: &#34;S-1-5-21-1111111111-2222222222-3333333333-512&#34;,
+  &#34;MemberName&#34;: &#34;CN=Kovács János,OU=Users,DC=ceg,DC=local&#34;,
+  &#34;MemberSid&#34;: &#34;S-1-5-21-1111111111-2222222222-3333333333-1105&#34;,
+  &#34;PrivilegedGroup&#34;: &#34;Domain Admins&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-low" data-category="GROUP_MEMBERSHIP" data-role="target"
+        data-sev="1" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-03 11:05:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-GROUP_MEMBERSHIP)">Csoporttagság</span><br>
+        <span class="mono">4732 group_member_added</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\rendszergazda hozzáadta janos.kovacs / kovacs.janos (S-1-5-21-1111111111-2222222222-3333333333-1105) tagot a(z) Builtin\Remote Desktop Users helyi csoporthoz
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>alacsony</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-03T10:05:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\rendszergazda <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1200)</span></dd><dt>célpont</dt><dd>janos.kovacs / kovacs.janos (S-1-5-21-1111111111-2222222222-3333333333-1105)</dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#207</dd>
+          </dl>
+          <pre>{
+  &#34;GroupDomain&#34;: &#34;Builtin&#34;,
+  &#34;GroupName&#34;: &#34;Remote Desktop Users&#34;,
+  &#34;GroupScope&#34;: &#34;local&#34;,
+  &#34;GroupSid&#34;: &#34;S-1-5-32-555&#34;,
+  &#34;MemberSid&#34;: &#34;S-1-5-21-1111111111-2222222222-3333333333-1105&#34;,
+  &#34;PrivilegedGroup&#34;: null
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-medium" data-category="GROUP_MEMBERSHIP" data-role="target"
+        data-sev="2" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-03 13:00:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-GROUP_MEMBERSHIP)">Csoporttagság</span><br>
+        <span class="mono">4729 group_member_removed</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\rendszergazda eltávolította Kovács János tagot a(z) CEG\Domain Admins globális csoportból – KIEMELT CSOPORT: Domain Admins
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>közepes</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-03T12:00:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\rendszergazda <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1200)</span></dd><dt>célpont</dt><dd>Kovács János <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#208</dd>
+          </dl>
+          <pre>{
+  &#34;GroupDomain&#34;: &#34;CEG&#34;,
+  &#34;GroupName&#34;: &#34;Domain Admins&#34;,
+  &#34;GroupScope&#34;: &#34;global&#34;,
+  &#34;GroupSid&#34;: &#34;S-1-5-21-1111111111-2222222222-3333333333-512&#34;,
+  &#34;MemberName&#34;: &#34;CN=Kovács János,OU=Users,DC=ceg,DC=local&#34;,
+  &#34;MemberSid&#34;: &#34;S-1-5-21-1111111111-2222222222-3333333333-1105&#34;,
+  &#34;PrivilegedGroup&#34;: &#34;Domain Admins&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-medium" data-category="LOCKOUT" data-role="target"
+        data-sev="2" data-alert="1">
+      <td class="mark" title="Fiókzárolás">!</td>
+      <td class="time">2026-11-04 10:15:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-LOCKOUT)">Zárolás</span><br>
+        <span class="mono">4740 account_locked</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">A(z) kovacs.janos fiók zárolva; a hibás próbálkozások forrása: WS-042
+<div class="sev-badge high">! Fiókzárolás</div>        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>közepes</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-04T09:15:00+00:00</dd>
+<dt>célpont</dt><dd>kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#209</dd>
+          </dl>
+          <pre>{
+  &#34;CallerComputerName&#34;: &#34;WS-042&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-low" data-category="LOCKOUT" data-role="target"
+        data-sev="1" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-04 10:30:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-LOCKOUT)">Zárolás</span><br>
+        <span class="mono">4767 account_unlocked</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\rendszergazda feloldotta a(z) CEG\kovacs.janos fiók zárolását
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>alacsony</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-04T09:30:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\rendszergazda <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1200)</span></dd><dt>célpont</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#210</dd>
+          </dl>
+          <pre>{}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-low" data-category="ACCOUNT_LIFECYCLE" data-role="target"
+        data-sev="1" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-05 09:00:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-ACCOUNT_LIFECYCLE)">Fiók életciklusa</span><br>
+        <span class="mono">4781 account_renamed</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\rendszergazda átnevezte a(z) kovacs.janos fiókot, új neve: janos.kovacs
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>alacsony</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-05T08:00:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\rendszergazda <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1200)</span></dd><dt>célpont</dt><dd>CEG\janos.kovacs <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#211</dd>
+          </dl>
+          <pre>{
+  &#34;NewTargetUserName&#34;: &#34;janos.kovacs&#34;,
+  &#34;OldTargetUserName&#34;: &#34;kovacs.janos&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="AUTHENTICATION" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-05 09:30:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4624 logon_success</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.5</td>
+      <td class="desc">Sikeres bejelentkezés: CEG\janos.kovacs (3 hálózati), forrás: 10.0.0.5
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-05T08:30:00+00:00</dd>
+<dt>célpont</dt><dd>CEG\janos.kovacs <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#212</dd>
+          </dl>
+          <pre>{
+  &#34;AuthenticationPackageName&#34;: &#34;Kerberos&#34;,
+  &#34;IpAddress&#34;: &#34;10.0.0.5&#34;,
+  &#34;LogonType&#34;: 3
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-low" data-category="ACCOUNT_LIFECYCLE" data-role="target"
+        data-sev="1" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-06 17:00:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-ACCOUNT_LIFECYCLE)">Fiók életciklusa</span><br>
+        <span class="mono">4725 account_disabled</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\rendszergazda letiltotta a(z) CEG\janos.kovacs fiókot
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>alacsony</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-06T16:00:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\rendszergazda <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1200)</span></dd><dt>célpont</dt><dd>CEG\janos.kovacs <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#213</dd>
+          </dl>
+          <pre>{}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-medium" data-category="ACCOUNT_LIFECYCLE" data-role="target"
+        data-sev="2" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-07 17:00:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-ACCOUNT_LIFECYCLE)">Fiók életciklusa</span><br>
+        <span class="mono">4726 account_deleted</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\rendszergazda törölte a(z) CEG\janos.kovacs fiókot
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>közepes</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-07T16:00:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\rendszergazda <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1200)</span></dd><dt>célpont</dt><dd>CEG\janos.kovacs <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-archiv.evtx#214</dd>
+          </dl>
+          <pre>{}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-low" data-category="AUTHENTICATION" data-role="target"
+        data-sev="1" data-alert="1">
+      <td class="mark" title="Sikertelen bejelentkezések, Lehetséges jelszótalálgatás">!</td>
+      <td class="time">2026-11-20 08:40:00<br><span class="muted">– 2026-11-20 08:41:50</span></td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4625 logon_failure ×12</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.66</td>
+      <td class="desc">12× sikertelen bejelentkezés (3 hálózati): CEG\kovacs.janos, forrás: 10.0.0.66 (2026-11-20 08:40:00 – 08:41:50)
+<div class="sev-badge high">! Sikertelen bejelentkezések, Lehetséges jelszótalálgatás</div>        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>alacsony</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T07:40:00+00:00</dd>
+<dt>célpont</dt><dd>CEG\kovacs.janos</dd>            <dt>Összevont események</dt><dd class="mono">DC01/Security-kiegeszites.evtx#901 · DC01/Security-kiegeszites.evtx#902 · DC01/Security-kiegeszites.evtx#903 · DC01/Security-kiegeszites.evtx#904 · DC01/Security-kiegeszites.evtx#905 · DC01/Security-kiegeszites.evtx#906 · DC01/Security-kiegeszites.evtx#907 · DC01/Security-kiegeszites.evtx#908 · DC01/Security-kiegeszites.evtx#909 · DC01/Security-kiegeszites.evtx#910 · DC01/Security-kiegeszites.evtx#911 · DC01/Security-kiegeszites.evtx#912</dd>
+          </dl>
+          <pre>{
+  &#34;AuthenticationPackageName&#34;: &#34;NTLM&#34;,
+  &#34;IpAddress&#34;: &#34;10.0.0.66&#34;,
+  &#34;IpPort&#34;: &#34;0&#34;,
+  &#34;LogonType&#34;: 3,
+  &#34;Status&#34;: &#34;0xC000006D&#34;,
+  &#34;SubStatus&#34;: &#34;0xC000006A&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="AUTHENTICATION" data-role="target"
+        data-sev="0" data-alert="1">
+      <td class="mark" title="Lehetséges jelszótalálgatás">!</td>
+      <td class="time">2026-11-20 08:42:30</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4624 logon_success</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.66</td>
+      <td class="desc">Sikeres bejelentkezés: CEG\kovacs.janos (3 hálózati), forrás: 10.0.0.66
+<div class="sev-badge high">! Lehetséges jelszótalálgatás</div>        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T07:42:30+00:00</dd>
+<dt>célpont</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-kiegeszites.evtx#913</dd>
+          </dl>
+          <pre>{
+  &#34;AuthenticationPackageName&#34;: &#34;NTLM&#34;,
+  &#34;IpAddress&#34;: &#34;10.0.0.66&#34;,
+  &#34;IpPort&#34;: &#34;0&#34;,
+  &#34;LogonType&#34;: 3
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-low" data-category="AUTHENTICATION" data-role="target"
+        data-sev="1" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 09:48:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4776 ntlm_validation_failure</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">Sikertelen NTLM-hitelesítés: kovacs.janos, munkaállomás: KALI – hibás jelszó (0xC000006A)
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>alacsony</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T08:48:00+00:00</dd>
+<dt>célpont</dt><dd>kovacs.janos</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#306</dd>
+          </dl>
+          <pre>{
+  &#34;PackageName&#34;: &#34;MICROSOFT_AUTHENTICATION_PACKAGE_V1_0&#34;,
+  &#34;Status&#34;: &#34;0xC000006A&#34;,
+  &#34;Workstation&#34;: &#34;KALI&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-low" data-category="AUTHENTICATION" data-role="target"
+        data-sev="1" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 09:49:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4771 kerberos_preauth_failed</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.66</td>
+      <td class="desc">Sikertelen Kerberos előhitelesítés: kovacs.janos, forrás: 10.0.0.66 – hibás jelszó (0x18)
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>alacsony</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T08:49:00+00:00</dd>
+<dt>célpont</dt><dd>kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#304</dd>
+          </dl>
+          <pre>{
+  &#34;IpAddress&#34;: &#34;::ffff:10.0.0.66&#34;,
+  &#34;IpPort&#34;: &#34;50001&#34;,
+  &#34;PreAuthType&#34;: &#34;2&#34;,
+  &#34;ServiceName&#34;: &#34;krbtgt/CEG.LOCAL&#34;,
+  &#34;Status&#34;: &#34;0x18&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-low" data-category="AUTHENTICATION" data-role="target"
+        data-sev="1" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 09:50:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4768 kerberos_tgt_failure</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.66</td>
+      <td class="desc">Sikertelen Kerberos TGT-kérés: CEG.LOCAL\kovacs.janos, forrás: 10.0.0.66 – a fiók letiltva, zárolva vagy lejárt (0x12)
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>alacsony</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T08:50:00+00:00</dd>
+<dt>célpont</dt><dd>CEG.LOCAL\kovacs.janos</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#302</dd>
+          </dl>
+          <pre>{
+  &#34;IpAddress&#34;: &#34;::ffff:10.0.0.66&#34;,
+  &#34;IpPort&#34;: &#34;50000&#34;,
+  &#34;ServiceName&#34;: &#34;krbtgt&#34;,
+  &#34;Status&#34;: &#34;0x12&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="WEB" data-role="correlated"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 09:55:00</td>
+      <td>IIS</td>
+      <td class="host">10.0.0.20</td>
+      <td><span class="cat" style="background:var(--c-WEB)">Web</span><br>
+        <span class="mono">IIS web_request</span></td>
+      <td><span class="role role-correlated">korrelált (IP)</span></td>
+      <td class="mono ip">10.0.0.5</td>
+      <td class="desc">Webes kérés: GET /owa/ → 302, kliens: 10.0.0.5
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T08:55:00+00:00</dd>
+<dt>Korrelált bejelentkezés</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#301</dd>            <dt>Eredeti rekord</dt><dd class="mono">C:\Users\biroi\OneDrive - Régens Zrt\Asztal\UserTrail\tests\fixtures\iis\W3SVC1\u_ex261120.log#5</dd>
+          </dl>
+          <pre>{
+  &#34;c-ip&#34;: &#34;10.0.0.5&#34;,
+  &#34;cs(User-Agent)&#34;: &#34;Mozilla/5.0 (Windows NT 10.0)&#34;,
+  &#34;cs-method&#34;: &#34;GET&#34;,
+  &#34;cs-uri-stem&#34;: &#34;/owa/&#34;,
+  &#34;s-ip&#34;: &#34;10.0.0.20&#34;,
+  &#34;s-port&#34;: &#34;443&#34;,
+  &#34;sc-status&#34;: &#34;302&#34;,
+  &#34;sc-substatus&#34;: &#34;0&#34;,
+  &#34;sc-win32-status&#34;: &#34;0&#34;,
+  &#34;time-taken&#34;: &#34;15&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="AUTHENTICATION" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 09:57:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4776 ntlm_validation</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">NTLM-hitelesítés ellenőrzése: kovacs.janos, munkaállomás: WS-042
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T08:57:00+00:00</dd>
+<dt>célpont</dt><dd>kovacs.janos</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#305</dd>
+          </dl>
+          <pre>{
+  &#34;PackageName&#34;: &#34;MICROSOFT_AUTHENTICATION_PACKAGE_V1_0&#34;,
+  &#34;Status&#34;: &#34;0x00000000&#34;,
+  &#34;Workstation&#34;: &#34;WS-042&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="AUTHENTICATION" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 09:58:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4768 kerberos_tgt</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.5</td>
+      <td class="desc">Kerberos TGT kiadva: CEG.LOCAL\kovacs.janos, forrás: 10.0.0.5
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T08:58:00+00:00</dd>
+<dt>célpont</dt><dd>CEG.LOCAL\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#301</dd>
+          </dl>
+          <pre>{
+  &#34;IpAddress&#34;: &#34;::ffff:10.0.0.5&#34;,
+  &#34;IpPort&#34;: &#34;49712&#34;,
+  &#34;PreAuthType&#34;: &#34;2&#34;,
+  &#34;ServiceName&#34;: &#34;krbtgt&#34;,
+  &#34;Status&#34;: &#34;0x0&#34;,
+  &#34;TicketEncryptionType&#34;: &#34;0x12&#34;,
+  &#34;TicketOptions&#34;: &#34;0x40810010&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="AUTHENTICATION" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 09:58:01</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4769 kerberos_service_ticket</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.5</td>
+      <td class="desc">Kerberos szolgáltatásjegy: CEG.LOCAL\kovacs.janos → FS01$, forrás: 10.0.0.5
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T08:58:01+00:00</dd>
+<dt>célpont</dt><dd>CEG.LOCAL\kovacs.janos</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#303</dd>
+          </dl>
+          <pre>{
+  &#34;IpAddress&#34;: &#34;::ffff:10.0.0.5&#34;,
+  &#34;IpPort&#34;: &#34;49713&#34;,
+  &#34;ServiceName&#34;: &#34;FS01$&#34;,
+  &#34;ServiceSid&#34;: &#34;S-1-5-21-1111111111-2222222222-3333333333-2001&#34;,
+  &#34;Status&#34;: &#34;0x0&#34;,
+  &#34;TicketEncryptionType&#34;: &#34;0x17&#34;,
+  &#34;TicketOptions&#34;: &#34;0x40810000&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-low" data-category="AUTHENTICATION" data-role="target"
+        data-sev="1" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 09:59:58</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4625 logon_failure</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.5</td>
+      <td class="desc">Sikertelen bejelentkezés: CEG\kovacs.janos (3 hálózati), forrás: 10.0.0.5 – hibás jelszó (0xC000006A)
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>alacsony</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T08:59:58.123456+00:00</dd>
+<dt>célpont</dt><dd>CEG\kovacs.janos</dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security.evtx#101</dd>
+          </dl>
+          <pre>{
+  &#34;AuthenticationPackageName&#34;: &#34;NTLM&#34;,
+  &#34;FailureReason&#34;: &#34;%%2313&#34;,
+  &#34;IpAddress&#34;: &#34;::ffff:10.0.0.5&#34;,
+  &#34;IpPort&#34;: &#34;51234&#34;,
+  &#34;LogonProcessName&#34;: &#34;NtLmSsp &#34;,
+  &#34;LogonType&#34;: 3,
+  &#34;Status&#34;: &#34;0xC000006D&#34;,
+  &#34;SubStatus&#34;: &#34;0xC000006A&#34;,
+  &#34;WorkstationName&#34;: &#34;WS-042&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="REMOTE_ACCESS" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 09:59:59</td>
+      <td>RDP-RCM</td>
+      <td class="host">WS-042.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-REMOTE_ACCESS)">Távoli hozzáférés</span><br>
+        <span class="mono">1149 rdp_auth_success</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.5</td>
+      <td class="desc">Sikeres RDP hálózati hitelesítés: CEG\kovacs.janos, forrás: 10.0.0.5
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T08:59:59+00:00</dd>
+<dt>célpont</dt><dd>CEG\kovacs.janos</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#312</dd>
+          </dl>
+          <pre>{}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="AUTHENTICATION" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 10:00:01</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4624 logon_success</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.5</td>
+      <td class="desc">Sikeres bejelentkezés: CEG\kovacs.janos (10 RDP), forrás: 10.0.0.5
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T09:00:01+00:00</dd>
+<dt>célpont</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security.evtx#102</dd>
+          </dl>
+          <pre>{
+  &#34;AuthenticationPackageName&#34;: &#34;Negotiate&#34;,
+  &#34;ElevatedToken&#34;: &#34;%%1843&#34;,
+  &#34;IpAddress&#34;: &#34;10.0.0.5&#34;,
+  &#34;IpPort&#34;: &#34;0&#34;,
+  &#34;LogonProcessName&#34;: &#34;User32 &#34;,
+  &#34;LogonType&#34;: 10,
+  &#34;TargetLogonId&#34;: &#34;0x3e7a1f&#34;,
+  &#34;WorkstationName&#34;: &#34;WS-042&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="PRIVILEGE" data-role="actor"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 10:00:01</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-PRIVILEGE)">Jogosultság</span><br>
+        <span class="mono">4672 special_privileges</span></td>
+      <td><span class="role role-actor">szereplő</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">Kiemelt jogosultságok az új bejelentkezéshez: CEG\kovacs.janos
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T09:00:01+00:00</dd>
+<dt>szereplő</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security.evtx#103</dd>
+          </dl>
+          <pre>{
+  &#34;PrivilegeList&#34;: &#34;SeBackupPrivilege\r\n\t\t\tSeDebugPrivilege&#34;,
+  &#34;SubjectLogonId&#34;: &#34;0x3e7a1f&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="REMOTE_ACCESS" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 10:00:02</td>
+      <td>RDP-LSM</td>
+      <td class="host">WS-042.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-REMOTE_ACCESS)">Távoli hozzáférés</span><br>
+        <span class="mono">21 rdp_logon</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.5</td>
+      <td class="desc">RDP-bejelentkezés: CEG\kovacs.janos, forrás: 10.0.0.5 (3. munkamenet)
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T09:00:02+00:00</dd>
+<dt>célpont</dt><dd>CEG\kovacs.janos</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#313</dd>
+          </dl>
+          <pre>{
+  &#34;Address&#34;: &#34;10.0.0.5&#34;,
+  &#34;SessionID&#34;: &#34;3&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="EXECUTION" data-role="actor"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 10:01:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-EXECUTION)">Futtatás</span><br>
+        <span class="mono">4688 process_created</span></td>
+      <td><span class="role role-actor">szereplő</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\kovacs.janos folyamatot indított: C:\Windows\System32\cmd.exe – cmd.exe /c whoami /all xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T09:01:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#308</dd>
+          </dl>
+          <pre>{
+  &#34;CommandLine&#34;: &#34;cmd.exe /c whoami /all xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&#34;,
+  &#34;MandatoryLabel&#34;: &#34;S-1-16-12288&#34;,
+  &#34;NewProcessId&#34;: &#34;0x1a2c&#34;,
+  &#34;NewProcessName&#34;: &#34;C:\\Windows\\System32\\cmd.exe&#34;,
+  &#34;ParentProcessName&#34;: &#34;C:\\Windows\\explorer.exe&#34;,
+  &#34;ProcessId&#34;: &#34;0x0f10&#34;,
+  &#34;TokenElevationType&#34;: &#34;%%1936&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-medium" data-category="PERSISTENCE" data-role="actor"
+        data-sev="2" data-alert="1">
+      <td class="mark" title="Perzisztencia">!</td>
+      <td class="time">2026-11-20 10:02:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-PERSISTENCE)">Perzisztencia</span><br>
+        <span class="mono">4698 scheduled_task_created</span></td>
+      <td><span class="role role-actor">szereplő</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\kovacs.janos ütemezett feladatot hozott létre: \Frissites
+<div class="sev-badge high">! Perzisztencia</div>        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>közepes</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T09:02:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#309</dd>
+          </dl>
+          <pre>{
+  &#34;TaskContent&#34;: &#34;&lt;Task&gt;...&lt;/Task&gt;&#34;,
+  &#34;TaskName&#34;: &#34;\\Frissites&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-medium" data-category="PERSISTENCE" data-role="actor"
+        data-sev="2" data-alert="1">
+      <td class="mark" title="Perzisztencia">!</td>
+      <td class="time">2026-11-20 10:03:00</td>
+      <td>System</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-PERSISTENCE)">Perzisztencia</span><br>
+        <span class="mono">7045 service_installed</span></td>
+      <td><span class="role role-actor">szereplő</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">Új szolgáltatás telepítve: UpdaterSvc – C:\Users\Public\upd.exe (fiók: LocalSystem, telepítő: janos.kovacs / kovacs.janos (S-1-5-21-1111111111-2222222222-3333333333-1105))
+<div class="sev-badge high">! Perzisztencia</div>        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>közepes</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T09:03:00+00:00</dd>
+<dt>szereplő</dt><dd>janos.kovacs / kovacs.janos (S-1-5-21-1111111111-2222222222-3333333333-1105)</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#310</dd>
+          </dl>
+          <pre>{
+  &#34;AccountName&#34;: &#34;LocalSystem&#34;,
+  &#34;ImagePath&#34;: &#34;C:\\Users\\Public\\upd.exe&#34;,
+  &#34;ServiceName&#34;: &#34;UpdaterSvc&#34;,
+  &#34;ServiceType&#34;: &#34;user mode service&#34;,
+  &#34;StartType&#34;: &#34;auto start&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="EXECUTION" data-role="actor"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 10:05:00</td>
+      <td>PowerShell</td>
+      <td class="host">WS-042.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-EXECUTION)">Futtatás</span><br>
+        <span class="mono">4104 script_block</span></td>
+      <td><span class="role role-actor">szereplő</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">PowerShell-szkriptblokk (janos.kovacs / kovacs.janos (S-1-5-21-1111111111-2222222222-3333333333-1105)): Get-Process | Select-Object -First 5
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T09:05:00+00:00</dd>
+<dt>szereplő</dt><dd>janos.kovacs / kovacs.janos (S-1-5-21-1111111111-2222222222-3333333333-1105)</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#318</dd>
+          </dl>
+          <pre>{
+  &#34;Incomplete&#34;: false,
+  &#34;MessageTotal&#34;: 1,
+  &#34;PartsReceived&#34;: 1,
+  &#34;Path&#34;: &#34;C:\\temp\\x.ps1&#34;,
+  &#34;ScriptBlockId&#34;: &#34;{aaaa}&#34;,
+  &#34;ScriptBlockText&#34;: &#34;Get-Process | Select-Object -First 5&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-low" data-category="AUTHENTICATION" data-role="actor"
+        data-sev="1" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 10:05:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4648 explicit_credentials</span></td>
+      <td><span class="role role-actor">szereplő</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\kovacs.janos explicit hitelesítő adatokat használt (CEG\admin.backup) a(z) FS01.ceg.local eléréséhez
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>alacsony</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T09:05:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd><dt>célpont</dt><dd>CEG\admin.backup</dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security.evtx#104</dd>
+          </dl>
+          <pre>{
+  &#34;ProcessName&#34;: &#34;C:\\Windows\\System32\\runas.exe&#34;,
+  &#34;TargetServerName&#34;: &#34;FS01.ceg.local&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-medium" data-category="EXECUTION" data-role="actor"
+        data-sev="2" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 10:06:00</td>
+      <td>PowerShell</td>
+      <td class="host">WS-042.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-EXECUTION)">Futtatás</span><br>
+        <span class="mono">4104 script_block</span></td>
+      <td><span class="role role-actor">szereplő</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">PowerShell-szkriptblokk (janos.kovacs / kovacs.janos (S-1-5-21-1111111111-2222222222-3333333333-1105)): function Invoke-Big { # első rész második rész IEX(New-Object Net.WebClient) harmadik rész }
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>közepes</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T09:06:00+00:00</dd>
+<dt>szereplő</dt><dd>janos.kovacs / kovacs.janos (S-1-5-21-1111111111-2222222222-3333333333-1105)</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#319</dd>
+          </dl>
+          <pre>{
+  &#34;Incomplete&#34;: false,
+  &#34;MessageTotal&#34;: 3,
+  &#34;Parts&#34;: [
+    &#34;WS-042/egyeb-csatornak.evtx#319&#34;,
+    &#34;WS-042/egyeb-csatornak.evtx#321&#34;,
+    &#34;WS-042/egyeb-csatornak.evtx#322&#34;
+  ],
+  &#34;PartsReceived&#34;: 3,
+  &#34;Path&#34;: &#34;C:\\temp\\x.ps1&#34;,
+  &#34;ScriptBlockId&#34;: &#34;{bbbb}&#34;,
+  &#34;ScriptBlockText&#34;: &#34;function Invoke-Big {\n  # első rész második rész IEX(New-Object Net.WebClient) harmadik rész\n}&#34;,
+  &#34;SuspiciousByPowerShell&#34;: true
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="EXECUTION" data-role="actor"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 10:06:00</td>
+      <td>PowerShell</td>
+      <td class="host">WS-042.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-EXECUTION)">Futtatás</span><br>
+        <span class="mono">4104 script_block</span></td>
+      <td><span class="role role-actor">szereplő</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">PowerShell-szkriptblokk (janos.kovacs / kovacs.janos (S-1-5-21-1111111111-2222222222-3333333333-1105)): whoami
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T09:06:00+00:00</dd>
+<dt>szereplő</dt><dd>janos.kovacs / kovacs.janos (S-1-5-21-1111111111-2222222222-3333333333-1105)</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#320</dd>
+          </dl>
+          <pre>{
+  &#34;Incomplete&#34;: false,
+  &#34;MessageTotal&#34;: 1,
+  &#34;PartsReceived&#34;: 1,
+  &#34;Path&#34;: &#34;C:\\temp\\x.ps1&#34;,
+  &#34;ScriptBlockId&#34;: &#34;{cccc}&#34;,
+  &#34;ScriptBlockText&#34;: &#34;whoami&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="EXECUTION" data-role="actor"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 10:07:00</td>
+      <td>PowerShell</td>
+      <td class="host">WS-042.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-EXECUTION)">Futtatás</span><br>
+        <span class="mono">4104 script_block</span></td>
+      <td><span class="role role-actor">szereplő</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">PowerShell-szkriptblokk (janos.kovacs / kovacs.janos (S-1-5-21-1111111111-2222222222-3333333333-1105)): [2/3] hiányos első hiányos második
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T09:07:00+00:00</dd>
+<dt>szereplő</dt><dd>janos.kovacs / kovacs.janos (S-1-5-21-1111111111-2222222222-3333333333-1105)</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#323</dd>
+          </dl>
+          <pre>{
+  &#34;Incomplete&#34;: true,
+  &#34;MessageTotal&#34;: 3,
+  &#34;Parts&#34;: [
+    &#34;WS-042/egyeb-csatornak.evtx#323&#34;,
+    &#34;WS-042/egyeb-csatornak.evtx#324&#34;
+  ],
+  &#34;PartsReceived&#34;: 2,
+  &#34;Path&#34;: &#34;C:\\temp\\x.ps1&#34;,
+  &#34;ScriptBlockId&#34;: &#34;{dddd}&#34;,
+  &#34;ScriptBlockText&#34;: &#34;hiányos első hiányos második&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="WEB" data-role="correlated"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 10:10:00</td>
+      <td>IIS</td>
+      <td class="host">10.0.0.20</td>
+      <td><span class="cat" style="background:var(--c-WEB)">Web</span><br>
+        <span class="mono">IIS web_request</span></td>
+      <td><span class="role role-correlated">korrelált (IP)</span></td>
+      <td class="mono ip">10.0.0.5</td>
+      <td class="desc">Webes kérés: POST /owa/auth.owa → 200, kliens: 10.0.0.5
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T09:10:00+00:00</dd>
+<dt>Korrelált bejelentkezés</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#313</dd>            <dt>Eredeti rekord</dt><dd class="mono">C:\Users\biroi\OneDrive - Régens Zrt\Asztal\UserTrail\tests\fixtures\iis\W3SVC1\u_ex261120.log#6</dd>
+          </dl>
+          <pre>{
+  &#34;c-ip&#34;: &#34;10.0.0.5&#34;,
+  &#34;cs(Referer)&#34;: &#34;https://mail.ceg.local/owa/&#34;,
+  &#34;cs(User-Agent)&#34;: &#34;Mozilla/5.0 (Windows NT 10.0)&#34;,
+  &#34;cs-method&#34;: &#34;POST&#34;,
+  &#34;cs-uri-stem&#34;: &#34;/owa/auth.owa&#34;,
+  &#34;s-ip&#34;: &#34;10.0.0.20&#34;,
+  &#34;s-port&#34;: &#34;443&#34;,
+  &#34;sc-status&#34;: &#34;200&#34;,
+  &#34;sc-substatus&#34;: &#34;0&#34;,
+  &#34;sc-win32-status&#34;: &#34;0&#34;,
+  &#34;time-taken&#34;: &#34;120&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="WEB" data-role="actor"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 11:05:00</td>
+      <td>IIS</td>
+      <td class="host">10.0.0.20</td>
+      <td><span class="cat" style="background:var(--c-WEB)">Web</span><br>
+        <span class="mono">IIS web_request</span></td>
+      <td><span class="role role-actor">szereplő</span></td>
+      <td class="mono ip">10.0.0.7</td>
+      <td class="desc">Webes kérés (CEG\kovacs.janos): GET /intranet/doc.aspx?id=42 → 200, kliens: 10.0.0.7
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T10:05:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\kovacs.janos</dd>            <dt>Eredeti rekord</dt><dd class="mono">C:\Users\biroi\OneDrive - Régens Zrt\Asztal\UserTrail\tests\fixtures\iis\W3SVC1\u_ex261120.log#13</dd>
+          </dl>
+          <pre>{
+  &#34;c-ip&#34;: &#34;::ffff:10.0.0.7&#34;,
+  &#34;cs(User-Agent)&#34;: &#34;Mozilla/5.0&#34;,
+  &#34;cs-method&#34;: &#34;GET&#34;,
+  &#34;cs-uri-query&#34;: &#34;id=42&#34;,
+  &#34;cs-uri-stem&#34;: &#34;/intranet/doc.aspx&#34;,
+  &#34;cs-username&#34;: &#34;CEG\\kovacs.janos&#34;,
+  &#34;s-ip&#34;: &#34;10.0.0.20&#34;,
+  &#34;s-port&#34;: &#34;443&#34;,
+  &#34;sc-status&#34;: &#34;200&#34;,
+  &#34;time-taken&#34;: &#34;30&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="REMOTE_ACCESS" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 11:30:00</td>
+      <td>RDP-LSM</td>
+      <td class="host">WS-042.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-REMOTE_ACCESS)">Távoli hozzáférés</span><br>
+        <span class="mono">24 rdp_disconnect</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.5</td>
+      <td class="desc">RDP-munkamenet bontva: CEG\kovacs.janos (3. munkamenet, forrás: 10.0.0.5)
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T10:30:00+00:00</dd>
+<dt>célpont</dt><dd>CEG\kovacs.janos</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#314</dd>
+          </dl>
+          <pre>{
+  &#34;Address&#34;: &#34;10.0.0.5&#34;,
+  &#34;SessionID&#34;: &#34;3&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="REMOTE_ACCESS" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 12:00:00</td>
+      <td>RDP-LSM</td>
+      <td class="host">WS-042.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-REMOTE_ACCESS)">Távoli hozzáférés</span><br>
+        <span class="mono">25 rdp_reconnect</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.9</td>
+      <td class="desc">RDP-munkamenet újracsatlakozva: CEG\kovacs.janos, forrás: 10.0.0.9 (3. munkamenet)
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T11:00:00+00:00</dd>
+<dt>célpont</dt><dd>CEG\kovacs.janos</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#315</dd>
+          </dl>
+          <pre>{
+  &#34;Address&#34;: &#34;10.0.0.9&#34;,
+  &#34;SessionID&#34;: &#34;3&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="AUTHENTICATION" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 13:00:00<br><span class="muted">– 2026-11-20 13:07:00</span></td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4624 logon_success ×8</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.40</td>
+      <td class="desc">8× sikeres bejelentkezés (3 hálózati): CEG\kovacs.janos, forrás: 10.0.0.40 (2026-11-20 13:00:00 – 13:07:00)
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T12:00:00+00:00</dd>
+<dt>célpont</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Összevont események</dt><dd class="mono">DC01/Security-kiegeszites.evtx#914 · DC01/Security-kiegeszites.evtx#915 · DC01/Security-kiegeszites.evtx#916 · DC01/Security-kiegeszites.evtx#917 · DC01/Security-kiegeszites.evtx#918 · DC01/Security-kiegeszites.evtx#919 · DC01/Security-kiegeszites.evtx#920 · DC01/Security-kiegeszites.evtx#921</dd>
+          </dl>
+          <pre>{
+  &#34;AuthenticationPackageName&#34;: &#34;NTLM&#34;,
+  &#34;IpAddress&#34;: &#34;10.0.0.40&#34;,
+  &#34;IpPort&#34;: &#34;0&#34;,
+  &#34;LogonType&#34;: 3
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-high" data-category="LOG_TAMPERING" data-role="actor"
+        data-sev="3" data-alert="1">
+      <td class="mark" title="Naplótörlés">!</td>
+      <td class="time">2026-11-20 13:00:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-LOG_TAMPERING)">Naplómanipuláció</span><br>
+        <span class="mono">1102 audit_log_cleared</span></td>
+      <td><span class="role role-actor">szereplő</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\kovacs.janos törölte a Security naplót
+<div class="sev-badge high">! Naplótörlés</div>        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>magas</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T12:00:00+00:00</dd>
+<dt>szereplő</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#307</dd>
+          </dl>
+          <pre>{
+  &#34;SubjectLogonId&#34;: &#34;0x3e7a1f&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-high" data-category="LOG_TAMPERING" data-role="actor"
+        data-sev="3" data-alert="1">
+      <td class="mark" title="Naplótörlés">!</td>
+      <td class="time">2026-11-20 13:00:05</td>
+      <td>System</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-LOG_TAMPERING)">Naplómanipuláció</span><br>
+        <span class="mono">104 log_cleared</span></td>
+      <td><span class="role role-actor">szereplő</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">CEG\kovacs.janos törölte a(z) System naplót
+<div class="sev-badge high">! Naplótörlés</div>        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>magas</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T12:00:05+00:00</dd>
+<dt>szereplő</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#311</dd>
+          </dl>
+          <pre>{
+  &#34;Channel&#34;: &#34;System&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="REMOTE_ACCESS" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 18:00:00</td>
+      <td>RDP-LSM</td>
+      <td class="host">WS-042.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-REMOTE_ACCESS)">Távoli hozzáférés</span><br>
+        <span class="mono">23 rdp_logoff</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">RDP-kijelentkezés: CEG\kovacs.janos (3. munkamenet)
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T17:00:00+00:00</dd>
+<dt>célpont</dt><dd>CEG\kovacs.janos</dd>            <dt>Eredeti rekord</dt><dd class="mono">WS-042/egyeb-csatornak.evtx#316</dd>
+          </dl>
+          <pre>{
+  &#34;SessionID&#34;: &#34;3&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="AUTHENTICATION" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 18:29:59</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4647 logoff</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">Felhasználó által kezdeményezett kijelentkezés: CEG\kovacs.janos
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T17:29:59+00:00</dd>
+<dt>célpont</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security.evtx#107</dd>
+          </dl>
+          <pre>{
+  &#34;TargetLogonId&#34;: &#34;0x3e7a1f&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="AUTHENTICATION" data-role="target"
+        data-sev="0" data-alert="0">
+      <td class="mark" title=""></td>
+      <td class="time">2026-11-20 18:30:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4634 logoff</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip"></td>
+      <td class="desc">Kijelentkezés: CEG\kovacs.janos (10 RDP)
+        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-20T17:30:00+00:00</dd>
+<dt>célpont</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security.evtx#106</dd>
+          </dl>
+          <pre>{
+  &#34;LogonType&#34;: 10,
+  &#34;TargetLogonId&#34;: &#34;0x3e7a1f&#34;
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr class="sev-info" data-category="AUTHENTICATION" data-role="target"
+        data-sev="0" data-alert="1">
+      <td class="mark" title="Munkaidőn kívül">!</td>
+      <td class="time">2026-11-21 22:30:00</td>
+      <td>Security</td>
+      <td class="host">DC01.ceg.local</td>
+      <td><span class="cat" style="background:var(--c-AUTHENTICATION)">Hitelesítés</span><br>
+        <span class="mono">4624 logon_success</span></td>
+      <td><span class="role role-target">célpont</span></td>
+      <td class="mono ip">10.0.0.5</td>
+      <td class="desc">Sikeres bejelentkezés: CEG\kovacs.janos (10 RDP), forrás: 10.0.0.5
+<div class="sev-badge high">! Munkaidőn kívül</div>        <details>
+          <summary>Részletek</summary>
+          <dl class="meta">
+            <dt>Súlyosság</dt><dd>információ</dd>
+            <dt>UTC</dt><dd class="mono">2026-11-21T21:30:00+00:00</dd>
+<dt>célpont</dt><dd>CEG\kovacs.janos <span class="mono">(S-1-5-21-1111111111-2222222222-3333333333-1105)</span></dd>            <dt>Eredeti rekord</dt><dd class="mono">DC01/Security-kiegeszites.evtx#922</dd>
+          </dl>
+          <pre>{
+  &#34;AuthenticationPackageName&#34;: &#34;NTLM&#34;,
+  &#34;IpAddress&#34;: &#34;10.0.0.5&#34;,
+  &#34;IpPort&#34;: &#34;0&#34;,
+  &#34;LogonType&#34;: 10
+}</pre>
+        </details>
+      </td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Feldolgozott forrásfájlok</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Útvonal</th><th>Típus</th><th class="right">Méret (bájt)</th>
+    <th>SHA-256</th><th class="right">Rekord</th><th class="right">Hiba</th>
+    <th>Betöltve</th><th>Beállítások</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="mono">DC01\Security.evtx</td>
+      <td>evtx</td>
+      <td class="right">4423</td>
+      <td class="mono">fdc3da448e5fa991b815d2192db3e02339b214424d3cd0afb636c83887ca003d</td>
+      <td class="right">8</td>
+      <td class="right">0</td>
+      <td class="time">2026-11-25T08:34:50.228785+00:00</td>
+      <td class="mono">synthetic=True </td>
+    </tr>
+    <tr>
+      <td class="mono">DC01\Security-archiv.evtx</td>
+      <td>evtx</td>
+      <td class="right">10769</td>
+      <td class="mono">b7f74bc8a961b86285bd34fc5dddcf3ff822354f684766a2d81e2ef1c25ad3ba</td>
+      <td class="right">16</td>
+      <td class="right">0</td>
+      <td class="time">2026-11-25T08:34:50.233171+00:00</td>
+      <td class="mono">synthetic=True </td>
+    </tr>
+    <tr>
+      <td class="mono">WS-042\egyeb-csatornak.evtx</td>
+      <td>evtx</td>
+      <td class="right">14062</td>
+      <td class="mono">b87bf4a0bba49130d269bc3d964075f44c1c6fa25e64c68bbd52cf572625799d</td>
+      <td class="right">25</td>
+      <td class="right">0</td>
+      <td class="time">2026-11-25T08:34:50.239431+00:00</td>
+      <td class="mono">synthetic=True </td>
+    </tr>
+    <tr>
+      <td class="mono">DC01\Security-kiegeszites.evtx</td>
+      <td>evtx</td>
+      <td class="right">14510</td>
+      <td class="mono">78444374f9327437f707355c7ef37a94aacb3d18840875a38ac28b7de894c555</td>
+      <td class="right">22</td>
+      <td class="right">0</td>
+      <td class="time">2026-11-25T08:34:50.245143+00:00</td>
+      <td class="mono">synthetic=True </td>
+    </tr>
+    <tr>
+      <td class="mono">WEB01\W3SVC1\u_ex261120.log</td>
+      <td>iis</td>
+      <td class="right">1177</td>
+      <td class="mono">69b9a7641f7b84664ba7618fc6125aa357ba07979e414e8a4f93f34d5a6a1f75</td>
+      <td class="right">6</td>
+      <td class="right">2</td>
+      <td class="time">2026-11-25T08:34:50.248656+00:00</td>
+      <td class="mono">iis_tz=UTC synthetic=True </td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</main>
+<script>
+(function () {
+  "use strict";
+  var root = document.documentElement;
+  try {
+    var saved = localStorage.getItem("usertrail-theme");
+    if (saved === "light" || saved === "dark") { root.setAttribute("data-theme", saved); }
+  } catch (e) { /* a böngésző tiltja a tárolást */ }
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    var current = root.getAttribute("data-theme") ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    var next = current === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("usertrail-theme", next); } catch (e) { /* nincs tárolás */ }
+  });
+
+  var table = document.getElementById("timeline");
+  if (!table) { return; }
+  var rows = Array.prototype.slice.call(table.tBodies[0].rows);
+  var search = document.getElementById("f-search");
+  var category = document.getElementById("f-category");
+  var role = document.getElementById("f-role");
+  var severity = document.getElementById("f-severity");
+  var onlyAlerts = document.getElementById("f-alerts");
+  var counter = document.getElementById("f-count");
+  var texts = rows.map(function (row) { return row.textContent.toLowerCase(); });
+
+  function apply() {
+    var needle = search.value.trim().toLowerCase();
+    var minSev = parseInt(severity.value, 10) || 0;
+    var shown = 0;
+    rows.forEach(function (row, i) {
+      var ok = (!needle || texts[i].indexOf(needle) !== -1) &&
+        (!category.value || row.getAttribute("data-category") === category.value) &&
+        (!role.value || row.getAttribute("data-role") === role.value) &&
+        parseInt(row.getAttribute("data-sev"), 10) >= minSev &&
+        (!onlyAlerts.checked || row.getAttribute("data-alert") === "1");
+      row.classList.toggle("hidden", !ok);
+      if (ok) { shown += 1; }
+    });
+    counter.textContent = String(shown);
+  }
+  [search, category, role, severity, onlyAlerts].forEach(function (el) {
+    el.addEventListener("input", apply);
+    el.addEventListener("change", apply);
+  });
+})();
+</script>
+</body>
+</html>

@@ -131,6 +131,33 @@ def test_success_after_failures() -> None:
     )
 
 
+def test_failures_without_sid_link_to_success_with_sid() -> None:
+    # A 4625 NULL SID-del (csak névvel), a 4624 SID-del naplózza ugyanazt a fiókot.
+    nameonly = Identity("kovacs.janos", "CEG", None)
+    failed = [
+        ev("logon_failure", T0 + timedelta(seconds=10 * i), target=nameonly) for i in range(12)
+    ]
+    success = ev("logon_success", T0 + timedelta(minutes=2, seconds=30))
+    alerts = detect_alerts(rows_of(*failed, success))
+    assert sorted(rules(alerts)) == ["failed_logon_burst", "success_after_failures"]
+    (after,) = [a for a in alerts if a.rule == "success_after_failures"]
+    assert set(after.related) == {e.raw_ref for e in failed}
+
+
+def test_lockout_links_failures_without_sid() -> None:
+    nameonly = Identity("kovacs.janos", "CEG", None)
+    failed = [ev("logon_failure", T0 - timedelta(minutes=5 - i), target=nameonly) for i in range(3)]
+    locked = ev(
+        "account_locked",
+        T0,
+        ip=None,
+        details={"CallerComputerName": "WS-042"},
+        severity=Severity.MEDIUM,
+    )
+    (alert,) = [a for a in detect_alerts(rows_of(*failed, locked)) if a.rule == "account_locked"]
+    assert len(alert.related) == 3
+
+
 def test_success_after_few_failures_is_fine() -> None:
     failed = failures(4, T0, timedelta(seconds=30))
     success = ev("logon_success", T0 + timedelta(minutes=3))
@@ -185,6 +212,20 @@ def test_fixture_alerts_for_channels() -> None:
         .description()
         .endswith("új szolgáltatást telepített: UpdaterSvc (DC01.ceg.local)")
     )
+
+
+def test_lockout_without_visible_failures() -> None:
+    locked = ev(
+        "account_locked",
+        T0,
+        ip=None,
+        details={"CallerComputerName": "WS-042"},
+        severity=Severity.MEDIUM,
+    )
+    (alert,) = detect_alerts(rows_of(locked))
+    assert alert.related == ()
+    assert "nem látszik sikertelen próbálkozás" in alert.description()
+    assert "another domain controller" in alert.description("en")
 
 
 def test_fixture_privileged_group_alert() -> None:

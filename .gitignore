@@ -21,3 +21,6 @@ htmlcov/
 *.evtx
 *.log
 !tests/fixtures/**
+
+# A szintetikus demo-vizsgálat része a repónak (lásd examples/build_demo.py).
+!examples/demo/demo-case.db

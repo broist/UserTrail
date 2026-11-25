@@ -153,6 +153,11 @@ MESSAGES: dict[str, dict[str, str]] = {
             "Account {account} locked out (caller: {caller}); {count} failed attempts in the "
             "previous {minutes} minutes from: {sources}"
         ),
+        "alert.account_locked_no_failures": (
+            "Account {account} locked out (caller: {caller}); no failed attempts in the "
+            "previous {minutes} minutes are visible in this case (they may have been logged "
+            "on another domain controller)"
+        ),
         "alert.failed_logon_burst": (
             "{count} failed logons for {account}, {first} – {last}, from: {sources}"
         ),
@@ -321,6 +326,11 @@ MESSAGES: dict[str, dict[str, str]] = {
         "alert.account_locked": (
             "A(z) {account} fiók zárolva (hívó gép: {caller}); az előző {minutes} percben "
             "{count} sikertelen próbálkozás, forrás: {sources}"
+        ),
+        "alert.account_locked_no_failures": (
+            "A(z) {account} fiók zárolva (hívó gép: {caller}); az előző {minutes} percből "
+            "nem látszik sikertelen próbálkozás ebben a vizsgálatban (a hibák másik "
+            "tartományvezérlőn is naplózódhattak)"
         ),
         "alert.failed_logon_burst": (
             "{count} sikertelen bejelentkezés: {account}, {first} – {last}, forrás: {sources}"

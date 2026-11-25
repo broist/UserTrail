@@ -20,12 +20,13 @@ Szabályok:
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, time, timedelta, tzinfo
 from typing import Any
 
 from usertrail.i18n import render
+from usertrail.identity import SidMap
 from usertrail.models import Identity, Role, Severity, TimelineEvent
 from usertrail.netutil import is_external_ip
 from usertrail.query import TimelineRow
@@ -72,24 +73,48 @@ class Alert:
     raw_ref: str  # az elsődleges esemény
     related: tuple[str, ...] = ()  # további érintett események
     params: dict[str, Any] = field(default_factory=dict)
+    # Eltérő szövegváltozat ugyanahhoz a szabályhoz (alapértelmezés: ``alert.<rule>``).
+    message_key: str | None = None
 
     @property
     def refs(self) -> frozenset[str]:
         return frozenset((self.raw_ref, *self.related))
 
     def description(self, lang: str = "hu") -> str:
-        return render(f"alert.{self.rule}", self.params, lang)
+        return render(self.message_key or f"alert.{self.rule}", self.params, lang)
 
 
-def _account(identity: Identity | None) -> str | None:
-    if identity is None:
+AccountKey = Callable[[TimelineEvent], str | None]
+
+
+def account_keyer(rows: Sequence[TimelineRow]) -> AccountKey:
+    """Egységes fiókkulcs a sorokból tanult SID-térkép alapján.
+
+    Ugyanannak a fióknak az eseményei hol SID-del, hol csak névvel szerepelnek (pl. a 4625
+    NULL SID-del, a 4624 SID-del). A kulcs a SID, ha az esemény tartalmazza, vagy ha a név
+    a térkép szerint egyértelműen egy SID-hez tartozik; különben a kisbetűs név.
+    """
+    sid_map = SidMap()
+    for row in rows:
+        sid_map.learn_event(row.event)
+
+    def canonical(identity: Identity | None) -> str | None:
+        if identity is None:
+            return None
+        if identity.sid_key:
+            return identity.sid_key
+        if identity.name_key:
+            sids = sid_map.sids_for_name(identity.name_key)
+            if len(sids) == 1:
+                return next(iter(sids))
+            return identity.name_key
         return None
-    return identity.sid_key or identity.name_key
 
+    def key(event: TimelineEvent) -> str | None:
+        """Annak a fióknak a kulcsa, akire az esemény vonatkozik (célpont, különben szereplő)."""
+        return canonical(event.target) or canonical(event.actor)
 
-def _account_key(event: TimelineEvent) -> str | None:
-    """Annak a fióknak a kulcsa, akire a hitelesítési esemény vonatkozik."""
-    return _account(event.target) or _account(event.actor)
+    return key
 
 
 def _display(event: TimelineEvent) -> str:
@@ -97,12 +122,12 @@ def _display(event: TimelineEvent) -> str:
     return identity.display() if identity else "-"
 
 
-def _by_account(events: Iterable[TimelineEvent]) -> dict[str, list[TimelineEvent]]:
+def _by_account(key: AccountKey, events: Iterable[TimelineEvent]) -> dict[str, list[TimelineEvent]]:
     grouped: dict[str, list[TimelineEvent]] = defaultdict(list)
     for event in events:
-        key = _account_key(event)
-        if key is not None:
-            grouped[key].append(event)
+        account = key(event)
+        if account is not None:
+            grouped[account].append(event)
     for items in grouped.values():
         items.sort(key=lambda e: e.sort_key)
     return grouped
@@ -114,7 +139,7 @@ def _count_in_window(
     return [f for f in failures if end - window <= f.timestamp_utc < end]
 
 
-def _log_cleared(rows: Sequence[TimelineRow], _cfg: AlertConfig) -> list[Alert]:
+def _log_cleared(rows: Sequence[TimelineRow], _cfg: AlertConfig, key: AccountKey) -> list[Alert]:
     return [
         Alert(
             "log_cleared",
@@ -132,7 +157,9 @@ def _log_cleared(rows: Sequence[TimelineRow], _cfg: AlertConfig) -> list[Alert]:
     ]
 
 
-def _privileged_group(rows: Sequence[TimelineRow], _cfg: AlertConfig) -> list[Alert]:
+def _privileged_group(
+    rows: Sequence[TimelineRow], _cfg: AlertConfig, key: AccountKey
+) -> list[Alert]:
     return [
         Alert(
             "privileged_group_added",
@@ -150,15 +177,15 @@ def _privileged_group(rows: Sequence[TimelineRow], _cfg: AlertConfig) -> list[Al
     ]
 
 
-def _lockouts(rows: Sequence[TimelineRow], cfg: AlertConfig) -> list[Alert]:
-    failures = _by_account(r.event for r in rows if r.event.action in FAILURE_ACTIONS)
+def _lockouts(rows: Sequence[TimelineRow], cfg: AlertConfig, key: AccountKey) -> list[Alert]:
+    failures = _by_account(key, (r.event for r in rows if r.event.action in FAILURE_ACTIONS))
     alerts = []
     for row in rows:
         event = row.event
         if event.action != "account_locked":
             continue
         before = _count_in_window(
-            failures.get(_account_key(event) or "", []),
+            failures.get(key(event) or "", []),
             event.timestamp_utc,
             cfg.lockout_lookback,
         )
@@ -177,16 +204,19 @@ def _lockouts(rows: Sequence[TimelineRow], cfg: AlertConfig) -> list[Alert]:
                     "minutes": int(cfg.lockout_lookback.total_seconds() // 60),
                     "sources": ", ".join(sources) or "-",
                 },
+                # Ha a vizsgálatban nem látszik előzmény, a hibák más gépen (pl. másik
+                # tartományvezérlőn) naplózódhattak: ezt külön szöveg jelzi.
+                message_key=None if before else "alert.account_locked_no_failures",
             )
         )
     return alerts
 
 
-def _failure_bursts(rows: Sequence[TimelineRow], cfg: AlertConfig) -> list[Alert]:
+def _failure_bursts(rows: Sequence[TimelineRow], cfg: AlertConfig, key: AccountKey) -> list[Alert]:
     """Egy sorozat = egymást ``fail_window``-on belül követő hibák; a küszöb felett egy
     figyelmeztetés a teljes sorozatra."""
     alerts = []
-    failures = _by_account(r.event for r in rows if r.event.action in FAILURE_ACTIONS)
+    failures = _by_account(key, (r.event for r in rows if r.event.action in FAILURE_ACTIONS))
     for items in failures.values():
         burst: list[TimelineEvent] = []
         for event in [*items, None]:
@@ -232,18 +262,22 @@ def _is_dense(burst: Sequence[TimelineEvent], cfg: AlertConfig) -> bool:
     return False
 
 
-def _success_after_failures(rows: Sequence[TimelineRow], cfg: AlertConfig) -> list[Alert]:
-    failures = _by_account(r.event for r in rows if r.event.action in FAILURE_ACTIONS)
+def _success_after_failures(
+    rows: Sequence[TimelineRow], cfg: AlertConfig, key: AccountKey
+) -> list[Alert]:
+    failures = _by_account(key, (r.event for r in rows if r.event.action in FAILURE_ACTIONS))
     alerts = []
     flagged: set[str] = set()
     for row in sorted(rows, key=lambda r: r.event.sort_key):
         event = row.event
         if event.action not in SUCCESS_ACTIONS:
             continue
-        key = _account_key(event) or ""
+        account = key(event) or ""
         before = [
             f
-            for f in _count_in_window(failures.get(key, []), event.timestamp_utc, cfg.fail_window)
+            for f in _count_in_window(
+                failures.get(account, []), event.timestamp_utc, cfg.fail_window
+            )
             if f.raw_ref not in flagged
         ]
         if len(before) < cfg.success_after_failures:
@@ -279,7 +313,7 @@ def _is_interactive_logon(event: TimelineEvent) -> bool:
         return False
 
 
-def _off_hours(rows: Sequence[TimelineRow], cfg: AlertConfig) -> list[Alert]:
+def _off_hours(rows: Sequence[TimelineRow], cfg: AlertConfig, key: AccountKey) -> list[Alert]:
     alerts = []
     for row in rows:
         event = row.event
@@ -307,19 +341,24 @@ def _off_hours(rows: Sequence[TimelineRow], cfg: AlertConfig) -> list[Alert]:
     return alerts
 
 
-def _reset_then_new_ip(rows: Sequence[TimelineRow], cfg: AlertConfig) -> list[Alert]:
+def _reset_then_new_ip(
+    rows: Sequence[TimelineRow], cfg: AlertConfig, key: AccountKey
+) -> list[Alert]:
     ordered = sorted(rows, key=lambda r: r.event.sort_key)
     successes = _by_account(
-        r.event
-        for r in ordered
-        if r.event.action in SUCCESS_ACTIONS and is_external_ip(r.event.src_ip)
+        key,
+        (
+            r.event
+            for r in ordered
+            if r.event.action in SUCCESS_ACTIONS and is_external_ip(r.event.src_ip)
+        ),
     )
     alerts = []
     for row in ordered:
         reset = row.event
         if reset.action != "password_reset" or reset.details.get("Result") == "failure":
             continue
-        logons = successes.get(_account_key(reset) or "", [])
+        logons = successes.get(key(reset) or "", [])
         known = {e.src_ip for e in logons if e.timestamp_utc < reset.timestamp_utc}
         for logon in logons:
             delta = logon.timestamp_utc - reset.timestamp_utc
@@ -346,7 +385,7 @@ def _reset_then_new_ip(rows: Sequence[TimelineRow], cfg: AlertConfig) -> list[Al
     return alerts
 
 
-def _persistence(rows: Sequence[TimelineRow], _cfg: AlertConfig) -> list[Alert]:
+def _persistence(rows: Sequence[TimelineRow], _cfg: AlertConfig, key: AccountKey) -> list[Alert]:
     alerts = []
     for row in rows:
         event = row.event
@@ -384,7 +423,8 @@ RULES = (
 def detect_alerts(rows: Sequence[TimelineRow], cfg: AlertConfig | None = None) -> list[Alert]:
     """Az összes szabály lefuttatása; az eredmény idő szerint rendezve."""
     cfg = cfg or AlertConfig()
-    alerts = [alert for rule in RULES for alert in rule(rows, cfg)]
+    key = account_keyer(rows)
+    alerts = [alert for rule in RULES for alert in rule(rows, cfg, key)]
     alerts.sort(key=lambda a: (a.timestamp_utc, a.rule, a.raw_ref))
     return alerts
 

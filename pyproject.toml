@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "usertrail"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "Felhasználóközpontú Windows forensic idővonal-építő EVTX- és IIS-naplókhoz"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -13,7 +13,7 @@ license-files = ["LICENSE"]
 authors = [{ name = "A UserTrail közreműködői" }]
 keywords = ["forensics", "dfir", "evtx", "active-directory", "timeline", "iis"]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Information Technology",
     "Operating System :: OS Independent",

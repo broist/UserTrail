@@ -65,3 +65,26 @@ pytest
 - Egy hibás rekord soha nem állíthatja le a feldolgozást: számold meg és jelentsd.
 - Amit nem bizonyít közvetlenül a napló, csak következtetünk rá (pl. IP-alapú korreláció),
   azt egyértelműen jelölni kell.
+
+## A demo-vizsgálat újraépítése
+
+Az `examples/demo/demo-case.db` a tesztek szintetikus fixture-jeiből készül. Ha a parserek vagy
+a séma változnak, építsd újra, és frissítsd a mintariportot is:
+
+```bash
+python examples/build_demo.py
+usertrail export --case examples/demo/demo-case.db --user kovacs.janos \
+    --tz Europe/Budapest --pivot-ip --collapse -f html -o examples/demo/riport.html
+```
+
+Valódi naplót soha ne tegyél a repóba: a `.gitignore` az `.evtx`, `.log` és `.db` fájlokat
+kizárja (a tesztfixture-ök és a demo-adatbázis kivételével).
+
+## Kiadás
+
+1. A `pyproject.toml` verziószámának emelése, a `CHANGELOG.md` kiegészítése.
+2. Zöld ellenőrzések helyben és a CI-ban.
+3. Csomag építése és próbatelepítése tiszta környezetbe: `python -m build` (vagy
+   `pip wheel . --no-deps -w dist`), majd `pip install dist/usertrail-*.whl`.
+4. Címke: `git tag -a vX.Y.Z -m "..."` és `git push origin vX.Y.Z`, majd a GitHubon release a
+   címkéből, a CHANGELOG megfelelő részével és a `dist/` fájlokkal.
