@@ -20,21 +20,14 @@ from rich.progress import (
 from rich.table import Table
 
 from usertrail import __version__, cli_hu
-from usertrail.alerts import AlertConfig, detect_alerts
-from usertrail.correlate import (
-    DEFAULT_COLLAPSE_GAP,
-    DEFAULT_WINDOW,
-    collapse_rows,
-    correlate_web,
-    pivot_seeds,
-    seed_time_range,
-)
-from usertrail.identity import IdentityQuery, SidMap, resolve_sid_only_names
+from usertrail.alerts import AlertConfig
+from usertrail.correlate import DEFAULT_COLLAPSE_GAP, DEFAULT_WINDOW
+from usertrail.engine import EngineError, TimelineRequest, TimelineResult, build_timeline
 from usertrail.models import Category, Severity, TimelineEvent
 from usertrail.parsers.evtx_reader import ReadStats
 from usertrail.pipeline import KIND_IIS, SourceFile, discover_sources, iter_events
-from usertrail.query import TimelineFilter, TimelineRow, select
 from usertrail.report.console import print_timeline
+from usertrail.report.export import ExportFormat, write_export
 from usertrail.store import CaseStore, StoreError, sha256_file
 from usertrail.timeutil import format_display, parse_bound, resolve_tz, tz_label
 
@@ -52,6 +45,132 @@ err = Console(stderr=True)
 class Lang(enum.StrEnum):
     en = "en"
     hu = "hu"
+
+
+# --- A timeline és az export közös kapcsolói ----------------------------------------------
+
+SourceOpt = Annotated[
+    list[Path] | None,
+    typer.Option(
+        "--source",
+        "-s",
+        exists=True,
+        help=(
+            "Közvetlenül beolvasandó naplófájl vagy mappa "
+            "(többször is megadható, a mappákat rekurzívan bejárja)."
+        ),
+    ),
+]
+CaseOpt = Annotated[
+    Path | None, typer.Option("--case", help="Vizsgálati adatbázis (lásd: ingest).")
+]
+UserOpt = Annotated[
+    str | None,
+    typer.Option("--user", "-u", help="DOMAIN\\felhasználó, UPN vagy felhasználónév."),
+]
+SidOpt = Annotated[str | None, typer.Option("--sid", help="A fiók SID-je.")]
+IpOpt = Annotated[str | None, typer.Option("--ip", help="Forrás-IP-cím.")]
+FromOpt = Annotated[
+    str | None,
+    typer.Option("--from", help="Kezdete (dátum vagy ISO időpont, a megjelenítési időzónában)."),
+]
+ToOpt = Annotated[str | None, typer.Option("--to", help="Vége (egy dátum az egész napot jelenti).")]
+TzOpt = Annotated[
+    str | None,
+    typer.Option(
+        "--tz", help="Megjelenítési időzóna, pl. Europe/Budapest (alapértelmezés: helyi idő)."
+    ),
+]
+CategoryOpt = Annotated[
+    str | None,
+    typer.Option(
+        "--category", help="Kategóriák vesszővel elválasztva, pl. AUTHENTICATION,PASSWORD."
+    ),
+]
+MinSeverityOpt = Annotated[
+    Severity,
+    typer.Option(
+        "--min-severity", case_sensitive=False, help="Legalacsonyabb megjelenített súlyosság."
+    ),
+]
+MachineOpt = Annotated[
+    bool,
+    typer.Option(
+        "--include-machine-accounts", help="A $ végű gépfiókok eseményei is látszódjanak."
+    ),
+]
+CollapseOpt = Annotated[
+    bool,
+    typer.Option(
+        "--collapse",
+        help=(
+            "Az ismétlődő, zajos események (pl. sok hálózati bejelentkezés ugyanarról "
+            "az IP-ről) összevonása egy sorba."
+        ),
+    ),
+]
+CollapseGapOpt = Annotated[
+    int,
+    typer.Option(
+        "--collapse-gap",
+        min=1,
+        help="Összevonásnál az egymást követő események közti legnagyobb szünet percben.",
+    ),
+]
+NoAlertsOpt = Annotated[bool, typer.Option("--no-alerts", help="A figyelmeztetések kikapcsolása.")]
+FailThresholdOpt = Annotated[
+    int,
+    typer.Option(
+        "--fail-threshold",
+        min=1,
+        help="Ennyi sikertelen bejelentkezés a --fail-window időn belül figyelmeztetést ad.",
+    ),
+]
+FailWindowOpt = Annotated[
+    int,
+    typer.Option("--fail-window", min=1, help="A sikertelen bejelentkezések időablaka percben."),
+]
+WorkHoursOpt = Annotated[
+    str,
+    typer.Option(
+        "--work-hours", help="Munkaidő ÓÓ:PP-ÓÓ:PP alakban (hétköznap, a --tz időzónájában)."
+    ),
+]
+PivotIpOpt = Annotated[
+    bool,
+    typer.Option(
+        "--pivot-ip",
+        help=(
+            "A felhasználó bejelentkezési IP-címeiről érkező webes (IIS) kérések "
+            "bevonása „korrelált” jelöléssel."
+        ),
+    ),
+]
+PivotWindowOpt = Annotated[
+    int,
+    typer.Option(
+        "--pivot-window",
+        min=1,
+        help="Az IP-pivot időablaka percben a bejelentkezés előtt és után.",
+    ),
+]
+IisTzOpt = Annotated[
+    str | None,
+    typer.Option(
+        "--iis-tz",
+        help=(
+            "Az IIS-naplók időzónája, ha a szerveren helyi időre állították "
+            "(alapértelmezés: UTC, ahogy az IIS alapból naplóz)."
+        ),
+    ),
+]
+LangOpt = Annotated[Lang, typer.Option("--lang", help="A leírások nyelve.")]
+
+DEFAULT_COLLAPSE_GAP_MIN = int(DEFAULT_COLLAPSE_GAP.total_seconds() // 60)
+DEFAULT_PIVOT_WINDOW_MIN = int(DEFAULT_WINDOW.total_seconds() // 60)
+DEFAULT_FAIL_THRESHOLD = AlertConfig().fail_threshold
+DEFAULT_FAIL_WINDOW_MIN = int(AlertConfig().fail_window.total_seconds() // 60)
+DEFAULT_WORK_HOURS = "07:00-19:00"
 
 
 def _version_callback(value: bool) -> None:
@@ -99,238 +218,239 @@ def _not_yet(milestone: int) -> None:
     raise typer.Exit(code=2)
 
 
-@app.command()
-def timeline(
-    source: Annotated[
-        list[Path] | None,
-        typer.Option(
-            "--source",
-            "-s",
-            exists=True,
-            help=(
-                "Közvetlenül beolvasandó EVTX-fájl vagy mappa "
-                "(többször is megadható, a mappákat rekurzívan bejárja)."
-            ),
-        ),
-    ] = None,
-    case: Annotated[
-        Path | None, typer.Option("--case", help="Vizsgálati adatbázis (lásd: ingest).")
-    ] = None,
-    user: Annotated[
-        str | None,
-        typer.Option("--user", "-u", help="DOMAIN\\felhasználó, UPN vagy felhasználónév."),
-    ] = None,
-    sid: Annotated[str | None, typer.Option("--sid", help="A fiók SID-je.")] = None,
-    ip: Annotated[str | None, typer.Option("--ip", help="Forrás-IP-cím.")] = None,
-    from_: Annotated[
-        str | None,
-        typer.Option(
-            "--from", help="Kezdete (dátum vagy ISO időpont, a megjelenítési időzónában)."
-        ),
-    ] = None,
-    to: Annotated[
-        str | None,
-        typer.Option("--to", help="Vége (egy dátum az egész napot jelenti)."),
-    ] = None,
-    tz: Annotated[
-        str | None,
-        typer.Option(
-            "--tz", help="Megjelenítési időzóna, pl. Europe/Budapest (alapértelmezés: helyi idő)."
-        ),
-    ] = None,
-    category: Annotated[
-        str | None,
-        typer.Option(
-            "--category", help="Kategóriák vesszővel elválasztva, pl. AUTHENTICATION,PASSWORD."
-        ),
-    ] = None,
-    min_severity: Annotated[
-        Severity,
-        typer.Option(
-            "--min-severity",
-            case_sensitive=False,
-            help="Legalacsonyabb megjelenített súlyosság.",
-        ),
-    ] = Severity.INFO,
-    include_machine_accounts: Annotated[
-        bool,
-        typer.Option(
-            "--include-machine-accounts", help="A $ végű gépfiókok eseményei is látszódjanak."
-        ),
-    ] = False,
-    collapse: Annotated[
-        bool,
-        typer.Option(
-            "--collapse",
-            help=(
-                "Az ismétlődő, zajos események (pl. sok hálózati bejelentkezés ugyanarról "
-                "az IP-ről) összevonása egy sorba."
-            ),
-        ),
-    ] = False,
-    collapse_gap: Annotated[
-        int,
-        typer.Option(
-            "--collapse-gap",
-            min=1,
-            help="Összevonásnál az egymást követő események közti legnagyobb szünet percben.",
-        ),
-    ] = int(DEFAULT_COLLAPSE_GAP.total_seconds() // 60),
-    no_alerts: Annotated[
-        bool, typer.Option("--no-alerts", help="A figyelmeztetések kikapcsolása.")
-    ] = False,
-    fail_threshold: Annotated[
-        int,
-        typer.Option(
-            "--fail-threshold",
-            min=1,
-            help="Ennyi sikertelen bejelentkezés a --fail-window időn belül figyelmeztetést ad.",
-        ),
-    ] = AlertConfig().fail_threshold,
-    fail_window: Annotated[
-        int,
-        typer.Option(
-            "--fail-window", min=1, help="A sikertelen bejelentkezések időablaka percben."
-        ),
-    ] = int(AlertConfig().fail_window.total_seconds() // 60),
-    work_hours: Annotated[
-        str,
-        typer.Option(
-            "--work-hours",
-            help="Munkaidő ÓÓ:PP-ÓÓ:PP alakban (hétköznap, a --tz időzónájában).",
-        ),
-    ] = "07:00-19:00",
-    pivot_ip: Annotated[
-        bool,
-        typer.Option(
-            "--pivot-ip",
-            help=(
-                "A felhasználó bejelentkezési IP-címeiről érkező webes (IIS) kérések "
-                "bevonása „korrelált” jelöléssel."
-            ),
-        ),
-    ] = False,
-    pivot_window: Annotated[
-        int,
-        typer.Option(
-            "--pivot-window",
-            min=1,
-            help="Az IP-pivot időablaka percben a bejelentkezés előtt és után.",
-        ),
-    ] = int(DEFAULT_WINDOW.total_seconds() // 60),
-    iis_tz: Annotated[
-        str | None,
-        typer.Option(
-            "--iis-tz",
-            help=(
-                "Az IIS-naplók időzónája, ha a szerveren helyi időre állították "
-                "(alapértelmezés: UTC, ahogy az IIS alapból naplóz)."
-            ),
-        ),
-    ] = None,
-    lang: Annotated[Lang, typer.Option("--lang", help="A leírások nyelve.")] = Lang.hu,
-) -> None:
-    """Egy fiók (vagy egy forrás-IP) idővonalának megjelenítése."""
+def _make_request(
+    *,
+    source: list[Path] | None,
+    case: Path | None,
+    user: str | None,
+    sid: str | None,
+    ip: str | None,
+    from_: str | None,
+    to: str | None,
+    tz: str | None,
+    category: str | None,
+    min_severity: Severity,
+    include_machine_accounts: bool,
+    collapse: bool,
+    collapse_gap: int,
+    no_alerts: bool,
+    fail_threshold: int,
+    fail_window: int,
+    work_hours: str,
+    pivot_ip: bool,
+    pivot_window: int,
+    iis_tz: str | None,
+) -> TimelineRequest:
+    """A kapcsolók ellenőrzése és összegyűjtése egy lekérdezésbe."""
     if case is not None and source:
         raise typer.BadParameter("a --case és a --source közül csak az egyiket add meg")
     if case is None and not source:
         raise typer.BadParameter("adj meg --case adatbázist vagy --source útvonalat")
     if not (user or sid or ip):
         raise typer.BadParameter("adj meg --user, --sid vagy --ip kapcsolót")
-
     display_tz, start, end = _time_options(tz, from_, to)
-    iis_zone = _iis_tz_option(iis_tz)
     work_start, work_end = _work_hours_option(work_hours)
-    window = timedelta(minutes=pivot_window)
-    web_pool: list[TimelineEvent] = []
-
-    if case is not None:
-        with _open_case(case) as store:
-            sid_map = store.sid_map()
-            identity = IdentityQuery.build(user, sid, sid_map) if (user or sid) else None
-            events = store.candidate_events(
-                names=identity.names if identity else (),
-                sids=identity.sids if identity else (),
-                ip=ip,
-                start=start,
-                end=end,
-            )
-            summary = f"[dim]{case}: {len(events)} jelölt esemény"
-            if pivot_ip and identity is not None:
-                web_pool = _web_pool_from_store(store, events, identity, window)
-    else:
-        assert source is not None
-        files = discover_sources(source)
-        if not files:
-            err.print("[red]Nem található támogatott naplófájl (.evtx vagy IIS .log).[/red]")
-            raise typer.Exit(code=1)
-        stats = ReadStats()
-        with err.status(f"{len(files)} naplófájl beolvasása..."):
-            events = list(iter_events(files, stats, iis_zone))
-        web_pool = events
-        sid_map = SidMap()
-        for event in events:
-            sid_map.learn_event(event)
-        identity = IdentityQuery.build(user, sid, sid_map) if (user or sid) else None
-        summary = (
-            f"[dim]{len(files)} fájlból {stats.records} rekord beolvasva, "
-            f"{len(events)} leképezett esemény"
-        )
-
-    for event in events:
-        resolve_sid_only_names(event, sid_map)
-    flt = TimelineFilter(
-        identity=identity,
+    return TimelineRequest(
+        user=user,
+        sid=sid,
         ip=ip,
+        case=case,
+        sources=tuple(source or ()),
         start=start,
         end=end,
+        display_tz=display_tz,
         categories=_parse_categories(category),
         min_severity=min_severity,
         include_machine_accounts=include_machine_accounts,
-    )
-    rows = select(events, flt)
-    correlated: list[TimelineRow] = []
-    if pivot_ip:
-        if identity is None:
-            err.print("[yellow]A --pivot-ip csak --user vagy --sid megadásával működik.[/yellow]")
-        else:
-            correlated = _correlate(events, web_pool, flt, window, rows)
-            rows = sorted(rows + correlated, key=lambda row: row.event.sort_key)
-    alerts = []
-    if not no_alerts:
-        # A szabályok a keresett identitás (vagy IP) összes során futnak, a kategória- és
-        # súlyosságszűrőtől függetlenül; csak az időszakszűrő érvényes.
-        alert_filter = TimelineFilter(
-            identity=identity,
-            ip=ip,
-            start=start,
-            end=end,
-            include_machine_accounts=include_machine_accounts,
-        )
-        alert_config = AlertConfig(
+        pivot_ip=pivot_ip,
+        pivot_window=timedelta(minutes=pivot_window),
+        iis_tz=_iis_tz_option(iis_tz),
+        collapse=collapse,
+        collapse_gap=timedelta(minutes=collapse_gap),
+        alerts=not no_alerts,
+        alert_config=AlertConfig(
             fail_threshold=fail_threshold,
             fail_window=timedelta(minutes=fail_window),
             work_start=work_start,
             work_end=work_end,
             tz=display_tz,
-        )
-        alerts = detect_alerts(select(events, alert_filter), alert_config)
-    if collapse:
-        rows = collapse_rows(rows, timedelta(minutes=collapse_gap))
-    title = " / ".join(x for x in (user, sid, ip) if x)
-    print_timeline(rows, display_tz, lang.value, f"UserTrail: {title}", alerts=alerts)
+        ),
+    )
 
-    err.print(f"{summary}, ebből {len(rows)} jelenik meg.[/dim]")
-    if alerts:
-        err.print(f"[bold red]{len(alerts)} figyelmeztetés (lásd a Figyelmeztetések táblát).[/]")
-    if correlated:
+
+def _run(request: TimelineRequest) -> TimelineResult:
+    try:
+        if request.case is not None:
+            return build_timeline(request)
+        with err.status("Naplófájlok beolvasása...") as status:
+            return build_timeline(request, on_status=status.update)
+    except StoreError as exc:
+        err.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1) from None
+    except sqlite3.DatabaseError as exc:
+        err.print(f"[red]A(z) {request.case} nem olvasható vizsgálati adatbázisként: {exc}[/red]")
+        raise typer.Exit(code=1) from None
+    except EngineError as exc:
+        err.print(f"[red]{str(exc)[:1].upper()}{str(exc)[1:]}.[/red]")
+        raise typer.Exit(code=1) from None
+
+
+def _print_summary(result: TimelineResult) -> None:
+    req = result.request
+    if req.case is not None:
+        summary = f"{req.case}: {result.candidate_count} jelölt esemény"
+    else:
+        summary = (
+            f"{len(result.sources)} fájlból {result.records_read} rekord beolvasva, "
+            f"{result.candidate_count} leképezett esemény"
+        )
+    err.print(f"[dim]{summary}, ebből {len(result.rows)} jelenik meg.[/dim]")
+    if result.alerts:
         err.print(
-            f"[yellow]{len(correlated)} korrelált webes kérés (±{pivot_window} perc a "
+            f"[bold red]{len(result.alerts)} figyelmeztetés (lásd a Figyelmeztetések táblát).[/]"
+        )
+    if result.pivot_without_identity:
+        err.print("[yellow]A --pivot-ip csak --user vagy --sid megadásával működik.[/yellow]")
+    if result.correlated_count:
+        minutes = int(req.pivot_window.total_seconds() // 60)
+        err.print(
+            f"[yellow]{result.correlated_count} korrelált webes kérés (±{minutes} perc a "
             "bejelentkezésektől). Ezek nem bizonyítják, hogy a kérést ugyanaz a "
             "felhasználó küldte.[/yellow]"
         )
-    if case is None and stats.errors:
-        _print_errors(stats.errors, stats.error_samples)
+    if result.error_count:
+        _print_errors(result.error_count, result.error_samples)
+
+
+@app.command()
+def timeline(
+    source: SourceOpt = None,
+    case: CaseOpt = None,
+    user: UserOpt = None,
+    sid: SidOpt = None,
+    ip: IpOpt = None,
+    from_: FromOpt = None,
+    to: ToOpt = None,
+    tz: TzOpt = None,
+    category: CategoryOpt = None,
+    min_severity: MinSeverityOpt = Severity.INFO,
+    include_machine_accounts: MachineOpt = False,
+    collapse: CollapseOpt = False,
+    collapse_gap: CollapseGapOpt = DEFAULT_COLLAPSE_GAP_MIN,
+    no_alerts: NoAlertsOpt = False,
+    fail_threshold: FailThresholdOpt = DEFAULT_FAIL_THRESHOLD,
+    fail_window: FailWindowOpt = DEFAULT_FAIL_WINDOW_MIN,
+    work_hours: WorkHoursOpt = DEFAULT_WORK_HOURS,
+    pivot_ip: PivotIpOpt = False,
+    pivot_window: PivotWindowOpt = DEFAULT_PIVOT_WINDOW_MIN,
+    iis_tz: IisTzOpt = None,
+    lang: LangOpt = Lang.hu,
+) -> None:
+    """Egy fiók (vagy egy forrás-IP) idővonalának megjelenítése."""
+    request = _make_request(
+        source=source,
+        case=case,
+        user=user,
+        sid=sid,
+        ip=ip,
+        from_=from_,
+        to=to,
+        tz=tz,
+        category=category,
+        min_severity=min_severity,
+        include_machine_accounts=include_machine_accounts,
+        collapse=collapse,
+        collapse_gap=collapse_gap,
+        no_alerts=no_alerts,
+        fail_threshold=fail_threshold,
+        fail_window=fail_window,
+        work_hours=work_hours,
+        pivot_ip=pivot_ip,
+        pivot_window=pivot_window,
+        iis_tz=iis_tz,
+    )
+    result = _run(request)
+    print_timeline(
+        result.rows,
+        request.display_tz,
+        lang.value,
+        f"UserTrail: {request.title}",
+        alerts=result.alerts,
+    )
+    _print_summary(result)
+
+
+@app.command()
+def export(
+    output: Annotated[Path, typer.Option("--output", "-o", help="A létrehozandó kimeneti fájl.")],
+    format_: Annotated[
+        ExportFormat,
+        typer.Option(
+            "--format",
+            "-f",
+            case_sensitive=False,
+            help="Kimeneti formátum: csv, json (JSON Lines) vagy html.",
+        ),
+    ] = ExportFormat.html,
+    source: SourceOpt = None,
+    case: CaseOpt = None,
+    user: UserOpt = None,
+    sid: SidOpt = None,
+    ip: IpOpt = None,
+    from_: FromOpt = None,
+    to: ToOpt = None,
+    tz: TzOpt = None,
+    category: CategoryOpt = None,
+    min_severity: MinSeverityOpt = Severity.INFO,
+    include_machine_accounts: MachineOpt = False,
+    collapse: CollapseOpt = False,
+    collapse_gap: CollapseGapOpt = DEFAULT_COLLAPSE_GAP_MIN,
+    no_alerts: NoAlertsOpt = False,
+    fail_threshold: FailThresholdOpt = DEFAULT_FAIL_THRESHOLD,
+    fail_window: FailWindowOpt = DEFAULT_FAIL_WINDOW_MIN,
+    work_hours: WorkHoursOpt = DEFAULT_WORK_HOURS,
+    pivot_ip: PivotIpOpt = False,
+    pivot_window: PivotWindowOpt = DEFAULT_PIVOT_WINDOW_MIN,
+    iis_tz: IisTzOpt = None,
+    lang: LangOpt = Lang.hu,
+) -> None:
+    """Idővonal exportálása CSV, JSON Lines vagy önálló HTML-riport formában.
+
+    A szűrők és kapcsolók ugyanazok, mint a timeline parancsnál. A CSV UTF-8 BOM-mal
+    készül (az Excel így jól nyitja az ékezeteket), és mellé egy .meta.json fájl kerül a
+    futtatás paramétereivel, a forrásfájlok hash-eivel és a figyelmeztetésekkel.
+    """
+    request = _make_request(
+        source=source,
+        case=case,
+        user=user,
+        sid=sid,
+        ip=ip,
+        from_=from_,
+        to=to,
+        tz=tz,
+        category=category,
+        min_severity=min_severity,
+        include_machine_accounts=include_machine_accounts,
+        collapse=collapse,
+        collapse_gap=collapse_gap,
+        no_alerts=no_alerts,
+        fail_threshold=fail_threshold,
+        fail_window=fail_window,
+        work_hours=work_hours,
+        pivot_ip=pivot_ip,
+        pivot_window=pivot_window,
+        iis_tz=iis_tz,
+    )
+    result = _run(request)
+    try:
+        written = write_export(result, format_, output, lang.value)
+    except OSError as exc:
+        err.print(f"[red]A kimeneti fájl nem írható: {exc}[/red]")
+        raise typer.Exit(code=1) from None
+    for path in written:
+        err.print(f"[green]Elkészült:[/green] {path}")
+    _print_summary(result)
 
 
 def _work_hours_option(value: str) -> tuple[time, time]:
@@ -363,57 +483,6 @@ def _iis_tz_option(iis_tz: str | None) -> tzinfo | None:
             "az --iis-tz értéke IANA-időzóna legyen, pl. Europe/Budapest", param_hint="--iis-tz"
         )
     return zone
-
-
-def _seed_rows(
-    events: list[TimelineEvent], identity: IdentityQuery, flt_time: TimelineFilter
-) -> list[TimelineRow]:
-    """A pivotpontokhoz a felhasználó összes sikeres bejelentkezése kell, a kategória- és
-    súlyosságszűrőtől függetlenül (az időszakszűrő viszont érvényes)."""
-    seed_filter = TimelineFilter(
-        identity=identity,
-        start=flt_time.start,
-        end=flt_time.end,
-        include_machine_accounts=True,
-    )
-    return select(events, seed_filter)
-
-
-def _correlate(
-    events: list[TimelineEvent],
-    pool: list[TimelineEvent],
-    flt: TimelineFilter,
-    window: timedelta,
-    direct_rows: list[TimelineRow],
-) -> list[TimelineRow]:
-    assert flt.identity is not None
-    seeds = pivot_seeds(_seed_rows(events, flt.identity, flt))
-    web_filter = TimelineFilter(
-        start=flt.start,
-        end=flt.end,
-        categories=flt.categories,
-        min_severity=flt.min_severity,
-    )
-    return correlate_web(
-        seeds, pool, web_filter, window, exclude=(row.event.raw_ref for row in direct_rows)
-    )
-
-
-def _web_pool_from_store(
-    store: CaseStore,
-    events: list[TimelineEvent],
-    identity: IdentityQuery,
-    window: timedelta,
-) -> list[TimelineEvent]:
-    seeds = pivot_seeds(
-        select(events, TimelineFilter(identity=identity, include_machine_accounts=True))
-    )
-    bounds = seed_time_range(seeds, window)
-    if bounds is None:
-        return []
-    return store.events_from_ips(
-        {seed.ip for seed in seeds}, start=bounds[0], end=bounds[1], source="IIS"
-    )
 
 
 def _time_options(
@@ -602,12 +671,6 @@ def users(
 
 def _fmt_stored(value: str | None, display_tz: tzinfo | None) -> str:
     return format_display(datetime.fromisoformat(value), display_tz) if value else "-"
-
-
-@app.command()
-def export(case: Annotated[Path, typer.Option("--case")]) -> None:
-    """Idővonal exportálása CSV, JSON Lines vagy önálló HTML-riport formában."""
-    _not_yet(8)
 
 
 if __name__ == "__main__":  # pragma: no cover

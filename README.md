@@ -13,10 +13,10 @@ eseményeket. A UserTrail identitásközpontú: egy fiók teljes történetét r
 forrásból, és minden eseménynél jelzi, hogy a fiók **szereplő** volt (ő csinálta) vagy
 **célpont** (vele csinálták).
 
-> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–7. mérföldkő: EVTX- és IIS-naplók
+> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–8. mérföldkő: EVTX- és IIS-naplók
 > betöltése SQLite vizsgálati adatbázisba (SHA-256 hash-sel, duplikáció-szűréssel), illetve
 > közvetlen olvasása, IP-pivot a webes kérésekre, figyelmeztetések, a zajos események
-> összevonása, és az alábbi események:
+> összevonása, CSV-, JSON Lines- és önálló HTML-riport, és az alábbi események:
 >
 > - bejelentkezés: 4624, 4625, 4634, 4647, 4648, 4672
 > - fiókok életciklusa: 4720, 4722, 4725, 4726, 4738, 4781 (átnevezés után a régi és az új
@@ -103,6 +103,30 @@ bejelentkezéseinek** IP-címeiről érkeztek a bejelentkezés előtt/után ±`-
 belül. Ezek **„korrelált (IP)”** jelölést kapnak, mert nem bizonyítják, hogy a kérést ugyanaz a
 felhasználó küldte (ugyanarról az IP-ről mások is dolgozhattak, pl. NAT vagy terminálszerver
 mögül).
+
+### Exportálás: CSV, JSON Lines, HTML-riport
+
+Az `export` ugyanazokat a szűrőket és kapcsolókat fogadja, mint a `timeline`:
+
+```bash
+usertrail export --case ugy.db --user kovacs.janos --tz Europe/Budapest -f html -o riport.html
+usertrail export --case ugy.db --user kovacs.janos -f csv -o idovonal.csv
+usertrail export --case ugy.db --user kovacs.janos -f json -o idovonal.jsonl
+```
+
+- **HTML:** egyetlen önálló fájl, külső hivatkozás nélkül (hálózat nélkül is megnyitható,
+  bizonyítékként átadható). Tartalma: összefoglaló (időszak, eseményszám kategóriánként és
+  súlyosság szerint), figyelmeztetések, kereshető és szűrhető idővonal (kategória, szerep,
+  súlyosság, csak figyelmeztetéses sorok), kategóriaszínek, szereplő/célpont jelölés,
+  kinyitható részletek a nyers mezőkkel és az eredeti rekord hivatkozásával, a feldolgozott
+  forrásfájlok listája SHA-256 hash-sel, a megjelenítési időzóna, az eszközverzió és a futtatás
+  paraméterei. Világos és sötét módban is működik.
+- **CSV:** UTF-8 BOM-mal, hogy az Excel jól nyissa az ékezeteket. Az oszlopnevek angolok
+  (`Timestamp`, `Source`, `EventID`, `Description` …), mert ezeket gépi eszközök, pl. a Timeline
+  Explorer dolgozzák fel. Mellé egy `<név>.meta.json` kerül a futtatás paramétereivel, a
+  forrásfájlok hash-eivel és a figyelmeztetésekkel.
+- **JSON Lines:** az első sor a metaadat (`"type": "meta"`), utána a figyelmeztetések
+  (`"alert"`), majd az események (`"event"`).
 
 ### Figyelmeztetések
 

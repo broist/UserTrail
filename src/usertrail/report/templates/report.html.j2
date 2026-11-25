@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="{{ meta.tool }} {{ meta.version }}">
+<title>{{ t.title }}: {{ meta.title }}</title>
+<style>
+:root {
+  --bg: #f7f7f5; --panel: #ffffff; --text: #1d1d1f; --muted: #66666e; --border: #dcdcd8;
+  --accent: #2f5fd0; --row-hover: #f0f2f8; --code-bg: #f1f1ee;
+  --sev-low: #0b7285; --sev-medium: #a35d00; --sev-high: #c0262d;
+  --role-actor: #8a2fa8; --role-target: #2f5fd0; --role-corr: #a35d00;
+  --c-ACCOUNT_LIFECYCLE: #4c6ef5; --c-AUTHENTICATION: #1c7ed6; --c-PASSWORD: #ae3ec9;
+  --c-LOCKOUT: #e8590c; --c-GROUP_MEMBERSHIP: #7048e8; --c-PRIVILEGE: #d6336c;
+  --c-REMOTE_ACCESS: #0ca678; --c-EXECUTION: #f08c00; --c-PERSISTENCE: #c92a2a;
+  --c-WEB: #1098ad; --c-LOG_TAMPERING: #862e9c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16171a; --panel: #1f2024; --text: #e8e8ea; --muted: #a0a0a8; --border: #34353b;
+    --accent: #7ea2ff; --row-hover: #26282e; --code-bg: #141518;
+    --sev-low: #4fc3d4; --sev-medium: #f0a64a; --sev-high: #ff6b6b;
+    --role-actor: #d48cf0; --role-target: #7ea2ff; --role-corr: #f0a64a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #16171a; --panel: #1f2024; --text: #e8e8ea; --muted: #a0a0a8; --border: #34353b;
+  --accent: #7ea2ff; --row-hover: #26282e; --code-bg: #141518;
+  --sev-low: #4fc3d4; --sev-medium: #f0a64a; --sev-high: #ff6b6b;
+  --role-actor: #d48cf0; --role-target: #7ea2ff; --role-corr: #f0a64a;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 1400px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 17px; margin: 32px 0 12px; }
+.muted { color: var(--muted); }
+.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.header { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+.meta { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin-top: 12px; }
+.meta dt { color: var(--muted); }
+.meta dd { margin: 0; overflow-wrap: anywhere; }
+button, select, input { font: inherit; color: var(--text); background: var(--panel);
+  border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; }
+button { cursor: pointer; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.stat { font-size: 26px; font-weight: 600; }
+.bar-row { display: grid; grid-template-columns: 150px 1fr 48px; gap: 8px; align-items: center; margin: 4px 0; }
+.bar { height: 10px; border-radius: 5px; background: var(--border); overflow: hidden; }
+.bar > span { display: block; height: 100%; }
+.right { text-align: right; font-variant-numeric: tabular-nums; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.filters input[type="search"] { flex: 1 1 240px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+th, td { border-bottom: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; }
+th { position: sticky; top: 0; background: var(--panel); font-weight: 600; z-index: 1; }
+tbody tr:hover { background: var(--row-hover); }
+td.time { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cat { display: inline-block; padding: 1px 6px; border-radius: 4px; color: #fff; font-size: 12px; white-space: nowrap; }
+.role { font-weight: 600; white-space: nowrap; }
+.role-actor, .role-both { color: var(--role-actor); }
+.role-target { color: var(--role-target); }
+.role-related { color: var(--muted); }
+.role-correlated { color: var(--role-corr); font-style: italic; }
+.sev-low td.desc { color: var(--sev-low); }
+.sev-medium td.desc { color: var(--sev-medium); }
+.sev-high td.desc { color: var(--sev-high); font-weight: 600; }
+td.desc details { color: var(--text); font-weight: normal; }
+.sev-badge { white-space: nowrap; }
+.sev-badge.low { color: var(--sev-low); } .sev-badge.medium { color: var(--sev-medium); }
+.sev-badge.high { color: var(--sev-high); font-weight: 600; }
+.mark { color: var(--sev-high); font-weight: 700; }
+details summary { cursor: pointer; color: var(--accent); }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px;
+  overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0 0; font-size: 12px; }
+code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px; overflow-wrap: anywhere; }
+.note { border-left: 4px solid var(--role-corr); padding: 8px 12px; margin: 12px 0; background: var(--panel); }
+.hidden { display: none; }
+@media (max-width: 700px) {
+  .bar-row { grid-template-columns: 110px 1fr 40px; }
+  td.host, th.host { display: none; }
+}
+@media print {
+  .filters, #theme-toggle { display: none; }
+  th { position: static; }
+}
+</style>
+</head>
+<body>
+<main>
+<div class="header">
+  <div>
+    <h1>{{ t.title }}: {{ meta.title }}</h1>
+    <div class="muted">{{ t.time_zone }}: <strong>{{ meta.time_zone }}</strong></div>
+  </div>
+  <button id="theme-toggle" type="button">{{ t.theme }}</button>
+</div>
+
+<div class="panel" style="margin-top:16px">
+  <dl class="meta">
+    <dt>{{ t.generated }}</dt><dd>{{ meta.generated_at_utc }} (UTC)</dd>
+    <dt>{{ t.version }}</dt><dd>{{ meta.tool }} {{ meta.version }}</dd>
+    <dt>{{ t.time_zone }}</dt><dd>{{ meta.time_zone }}</dd>
+  </dl>
+  <details style="margin-top:8px">
+    <summary>{{ t.parameters }}</summary>
+    <pre>{{ parameters_json }}</pre>
+  </details>
+</div>
+
+<h2>{{ t.summary }}</h2>
+<div class="cards">
+  <div class="panel">
+    <div class="muted">{{ t.period }}</div>
+    {% if period %}<div>{{ period[0] }} – {{ period[1] }}</div>{% else %}<div>–</div>{% endif %}
+    <div style="margin-top:12px" class="muted">{{ t.events }} / {{ t.rows }}</div>
+    <div class="stat">{{ total_events }} / {{ records|length }}</div>
+    <div style="margin-top:12px" class="muted">{{ t.alerts }}</div>
+    <div class="stat" {% if alerts %}style="color:var(--sev-high)"{% endif %}>{{ alerts|length }}</div>
+  </div>
+  <div class="panel">
+    <div class="muted">{{ t.by_category }}</div>
+    {% for c in categories %}
+    <div class="bar-row">
+      <span>{{ c.text }}</span>
+      <span class="bar"><span style="width:{{ c.percent }}%;background:var(--c-{{ c.key }})"></span></span>
+      <span class="right">{{ c.count }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="panel">
+    <div class="muted">{{ t.by_severity }}</div>
+    {% for s in severities %}
+    <div class="bar-row">
+      <span class="sev-badge {{ s.key }}">{{ s.text }}</span>
+      <span></span>
+      <span class="right">{{ s.count }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<h2>{{ t.alerts }}</h2>
+{% if alerts %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>{{ col.time }}</th><th>{{ col.severity }}</th><th>{{ col.rule }}</th><th>{{ col.description }}</th></tr></thead>
+  <tbody>
+  {% for a in alerts %}
+    <tr>
+      <td class="time">{{ a.timestamp }}</td>
+      <td><span class="sev-badge {{ a.severity }}">{{ a.severity_text }}</span></td>
+      <td>{{ a.rule_text }}</td>
+      <td>{{ a.description }}
+        <details><summary>{{ t.raw_ref }}</summary><pre>{{ a.raw_refs|join("\n") }}</pre></details>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="muted">{{ t.no_alerts }}</p>
+{% endif %}
+
+<h2>{{ t.timeline }}</h2>
+{% if has_correlated %}<div class="note">{{ t.correlated_note }}</div>{% endif %}
+<div class="filters">
+  <input id="f-search" type="search" placeholder="{{ t.search }}">
+  <select id="f-category">
+    <option value="">{{ t.all_categories }}</option>
+    {% for c in all_categories %}<option value="{{ c.key }}">{{ c.text }}</option>{% endfor %}
+  </select>
+  <select id="f-role">
+    <option value="">{{ t.all_roles }}</option>
+    {% for r in roles %}<option value="{{ r.key }}">{{ r.text }}</option>{% endfor %}
+  </select>
+  <label>{{ t.min_severity }}
+    <select id="f-severity">
+      {% for s in severities %}<option value="{{ s.rank }}">{{ s.text }}</option>{% endfor %}
+    </select>
+  </label>
+  <label><input id="f-alerts" type="checkbox"> {{ t.only_alerts }}</label>
+  <span class="muted"><span id="f-count">{{ records|length }}</span> {{ t.shown }}</span>
+</div>
+{% if records %}
+<div class="table-wrap">
+<table id="timeline">
+  <thead>
+    <tr><th></th><th>{{ col.time }}</th><th>{{ col.source }}</th><th class="host">{{ col.host }}</th>
+      <th>{{ col.event }}</th><th>{{ col.role }}</th><th>{{ col.ip }}</th><th>{{ col.description }}</th></tr>
+  </thead>
+  <tbody>
+  {% for r in records %}
+    <tr class="sev-{{ r.severity }}" data-category="{{ r.category }}" data-role="{{ r.role }}"
+        data-sev="{{ r.severity_rank }}" data-alert="{{ 1 if r.alerts else 0 }}">
+      <td class="mark" title="{{ r.alerts|join(', ') }}">{{ "!" if r.alerts else "" }}</td>
+      <td class="time">{{ r.timestamp }}{% if r.last_timestamp %}<br><span class="muted">– {{ r.last_timestamp }}</span>{% endif %}</td>
+      <td>{{ r.source }}</td>
+      <td class="host">{{ r.host }}</td>
+      <td><span class="cat" style="background:var(--c-{{ r.category }})">{{ r.category_text }}</span><br>
+        <span class="mono">{{ r.event_id }} {{ r.action }}{% if r.count > 1 %} ×{{ r.count }}{% endif %}</span></td>
+      <td><span class="role role-{{ r.role }}">{{ r.role_text }}</span></td>
+      <td class="mono">{{ r.src_ip or "" }}</td>
+      <td class="desc">{{ r.description }}
+        {% if r.alerts %}<div class="sev-badge high">! {{ r.alerts|join(", ") }}</div>{% endif %}
+        <details>
+          <summary>{{ t.details }}</summary>
+          <dl class="meta">
+            <dt>{{ col.severity }}</dt><dd>{{ r.severity_text }}</dd>
+            <dt>UTC</dt><dd class="mono">{{ r.timestamp_utc }}</dd>
+            {% if r.actor %}<dt>{{ roles[0].text }}</dt><dd>{{ r.actor }}{% if r.actor_sid and r.actor_sid not in r.actor %} <span class="mono">({{ r.actor_sid }})</span>{% endif %}</dd>{% endif %}
+            {% if r.target %}<dt>{{ roles[1].text }}</dt><dd>{{ r.target }}{% if r.target_sid and r.target_sid not in r.target %} <span class="mono">({{ r.target_sid }})</span>{% endif %}</dd>{% endif %}
+            {% if r.correlated_with %}<dt>{{ t.correlated_with }}</dt><dd class="mono">{{ r.correlated_with }}</dd>{% endif %}
+            <dt>{{ t.members if r.count > 1 else t.raw_ref }}</dt><dd class="mono">{{ r.raw_refs|join("\n")|replace("\n", " · ") }}</dd>
+          </dl>
+          <pre>{{ r.details_json }}</pre>
+        </details>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="muted">{{ t.no_rows }}</p>
+{% endif %}
+
+<h2>{{ t.sources }}</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>{{ t.path }}</th><th>{{ t.kind }}</th><th class="right">{{ t.size }}</th>
+    <th>{{ t.sha256 }}</th><th class="right">{{ t.records }}</th><th class="right">{{ t.errors }}</th>
+    <th>{{ t.ingested }}</th><th>{{ t.options }}</th></tr></thead>
+  <tbody>
+  {% for s in sources %}
+    <tr>
+      <td class="mono">{{ s.path }}</td>
+      <td>{{ s.kind }}</td>
+      <td class="right">{{ s.size }}</td>
+      <td class="mono">{{ s.sha256 }}</td>
+      <td class="right">{{ s.records }}</td>
+      <td class="right">{{ s.errors }}</td>
+      <td class="time">{{ s.ingested_at or "–" }}</td>
+      <td class="mono">{% for k, v in s.options.items() %}{{ k }}={{ v }} {% endfor %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% if error_count %}
+<details style="margin-top:12px">
+  <summary>{{ t.record_errors }}: {{ error_count }}</summary>
+  <pre>{{ error_samples|join("\n") }}</pre>
+</details>
+{% endif %}
+</main>
+<script>
+(function () {
+  "use strict";
+  var root = document.documentElement;
+  try {
+    var saved = localStorage.getItem("usertrail-theme");
+    if (saved === "light" || saved === "dark") { root.setAttribute("data-theme", saved); }
+  } catch (e) { /* a böngésző tiltja a tárolást */ }
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    var current = root.getAttribute("data-theme") ||
+      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    var next = current === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("usertrail-theme", next); } catch (e) { /* nincs tárolás */ }
+  });
+
+  var table = document.getElementById("timeline");
+  if (!table) { return; }
+  var rows = Array.prototype.slice.call(table.tBodies[0].rows);
+  var search = document.getElementById("f-search");
+  var category = document.getElementById("f-category");
+  var role = document.getElementById("f-role");
+  var severity = document.getElementById("f-severity");
+  var onlyAlerts = document.getElementById("f-alerts");
+  var counter = document.getElementById("f-count");
+  var texts = rows.map(function (row) { return row.textContent.toLowerCase(); });
+
+  function apply() {
+    var needle = search.value.trim().toLowerCase();
+    var minSev = parseInt(severity.value, 10) || 0;
+    var shown = 0;
+    rows.forEach(function (row, i) {
+      var ok = (!needle || texts[i].indexOf(needle) !== -1) &&
+        (!category.value || row.getAttribute("data-category") === category.value) &&
+        (!role.value || row.getAttribute("data-role") === role.value) &&
+        parseInt(row.getAttribute("data-sev"), 10) >= minSev &&
+        (!onlyAlerts.checked || row.getAttribute("data-alert") === "1");
+      row.classList.toggle("hidden", !ok);
+      if (ok) { shown += 1; }
+    });
+    counter.textContent = String(shown);
+  }
+  [search, category, role, severity, onlyAlerts].forEach(function (el) {
+    el.addEventListener("input", apply);
+    el.addEventListener("change", apply);
+  });
+})();
+</script>
+</body>
+</html>

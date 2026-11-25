@@ -433,6 +433,134 @@ def collapse_label(action: str, lang: str) -> str:
     return COLLAPSE_LABELS[_lang(lang)].get(action, action)
 
 
+# A HTML-riport feliratai.
+REPORT_TEXT: dict[str, dict[str, str]] = {
+    "en": {
+        "title": "UserTrail timeline",
+        "generated": "Generated",
+        "version": "Tool version",
+        "parameters": "Run parameters",
+        "time_zone": "Times shown in",
+        "summary": "Summary",
+        "period": "Period",
+        "events": "Events",
+        "rows": "Rows",
+        "alerts": "Alerts",
+        "no_alerts": "No alerts.",
+        "by_category": "Events by category",
+        "by_severity": "Events by severity",
+        "timeline": "Timeline",
+        "sources": "Processed source files",
+        "search": "Search…",
+        "all_categories": "All categories",
+        "all_roles": "All roles",
+        "min_severity": "Minimum severity",
+        "only_alerts": "Only alerted rows",
+        "theme": "Light / dark",
+        "details": "Details",
+        "raw_ref": "Original record",
+        "members": "Collapsed events",
+        "correlated_with": "Correlated with logon",
+        "fields": "Raw fields",
+        "path": "Path",
+        "kind": "Type",
+        "size": "Size (bytes)",
+        "sha256": "SHA-256",
+        "records": "Records",
+        "errors": "Errors",
+        "ingested": "Ingested",
+        "options": "Options",
+        "correlated_note": (
+            "Rows marked “correlated (IP)” only share a source IP and time window with a "
+            "logon of the account; they do not prove that the same person sent the request."
+        ),
+        "record_errors": "Records that could not be processed",
+        "shown": "shown",
+        "no_rows": "No matching events.",
+    },
+    "hu": {
+        "title": "UserTrail idővonal",
+        "generated": "Készült",
+        "version": "Eszközverzió",
+        "parameters": "Futtatási paraméterek",
+        "time_zone": "Időzóna",
+        "summary": "Összefoglaló",
+        "period": "Időszak",
+        "events": "Események",
+        "rows": "Sorok",
+        "alerts": "Figyelmeztetések",
+        "no_alerts": "Nincs figyelmeztetés.",
+        "by_category": "Események kategóriánként",
+        "by_severity": "Események súlyosság szerint",
+        "timeline": "Idővonal",
+        "sources": "Feldolgozott forrásfájlok",
+        "search": "Keresés…",
+        "all_categories": "Minden kategória",
+        "all_roles": "Minden szerep",
+        "min_severity": "Legalacsonyabb súlyosság",
+        "only_alerts": "Csak a figyelmeztetéses sorok",
+        "theme": "Világos / sötét",
+        "details": "Részletek",
+        "raw_ref": "Eredeti rekord",
+        "members": "Összevont események",
+        "correlated_with": "Korrelált bejelentkezés",
+        "fields": "Nyers mezők",
+        "path": "Útvonal",
+        "kind": "Típus",
+        "size": "Méret (bájt)",
+        "sha256": "SHA-256",
+        "records": "Rekord",
+        "errors": "Hiba",
+        "ingested": "Betöltve",
+        "options": "Beállítások",
+        "correlated_note": (
+            "A „korrelált (IP)” jelölésű sorokat csak a forrás-IP és az időablak köti a fiók "
+            "egy bejelentkezéséhez; nem bizonyítják, hogy a kérést ugyanaz a személy küldte."
+        ),
+        "record_errors": "Fel nem dolgozható rekordok",
+        "shown": "látható",
+        "no_rows": "Nincs találat.",
+    },
+}
+
+CATEGORY_TEXT: dict[str, dict[str, str]] = {
+    "en": {
+        "ACCOUNT_LIFECYCLE": "Account lifecycle",
+        "AUTHENTICATION": "Authentication",
+        "PASSWORD": "Password",
+        "LOCKOUT": "Lockout",
+        "GROUP_MEMBERSHIP": "Group membership",
+        "PRIVILEGE": "Privilege",
+        "REMOTE_ACCESS": "Remote access",
+        "EXECUTION": "Execution",
+        "PERSISTENCE": "Persistence",
+        "WEB": "Web",
+        "LOG_TAMPERING": "Log tampering",
+    },
+    "hu": {
+        "ACCOUNT_LIFECYCLE": "Fiók életciklusa",
+        "AUTHENTICATION": "Hitelesítés",
+        "PASSWORD": "Jelszó",
+        "LOCKOUT": "Zárolás",
+        "GROUP_MEMBERSHIP": "Csoporttagság",
+        "PRIVILEGE": "Jogosultság",
+        "REMOTE_ACCESS": "Távoli hozzáférés",
+        "EXECUTION": "Futtatás",
+        "PERSISTENCE": "Perzisztencia",
+        "WEB": "Web",
+        "LOG_TAMPERING": "Naplómanipuláció",
+    },
+}
+
+
+def report_text(lang: str) -> dict[str, str]:
+    return dict(REPORT_TEXT[_lang(lang)])
+
+
+def category_text(category: str, lang: str) -> str:
+    return CATEGORY_TEXT[_lang(lang)].get(category, category)
+
+
 def _lang(lang: str) -> str:
     return lang if lang in SUPPORTED_LANGS else DEFAULT_LANG
 

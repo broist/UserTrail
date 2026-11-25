@@ -85,7 +85,7 @@ def test_invalid_category_is_rejected(fake_evtx: Path) -> None:
 
 
 def test_not_yet_implemented_commands_exit_2(tmp_path: Path) -> None:
-    result = runner.invoke(app, ["export", "--case", str(tmp_path / "case.db")])
+    result = runner.invoke(app, ["sources", "--case", str(tmp_path / "case.db")])
     assert result.exit_code == 2
 
 
