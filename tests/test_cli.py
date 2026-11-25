@@ -107,3 +107,17 @@ def test_unknown_time_zone_message_is_hungarian(fake_evtx: Path) -> None:
     )
     assert result.exit_code != 0
     assert "ismeretlen időzóna" in result.output
+
+
+def test_redirected_output_does_not_fail_on_ansi_codepage() -> None:
+    """Regresszió: angol Windowson (cp1252) a fájlba irányított „ő” ne álljon le hibával."""
+    import io
+
+    from usertrail.cli import configure_streams
+
+    raw = io.BytesIO()
+    stream = io.TextIOWrapper(raw, encoding="cp1252")
+    configure_streams(stream)
+    stream.write("Időzóna: ű")
+    stream.flush()
+    assert raw.getvalue().decode("utf-8") == "Időzóna: ű"

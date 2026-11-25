@@ -1,7 +1,9 @@
 """Parancssori felület."""
 
 import enum
+import io
 import sqlite3
+import sys
 from collections.abc import Iterator
 from datetime import datetime, time, timedelta, tzinfo
 from pathlib import Path
@@ -742,5 +744,33 @@ def _fmt_stored(value: str | None, display_tz: tzinfo | None) -> str:
     return format_display(datetime.fromisoformat(value), display_tz) if value else "-"
 
 
+def configure_streams(*streams: object) -> None:
+    """Gondoskodik róla, hogy a magyar ékezetes kimenet ne okozzon kódolási hibát.
+
+    Windowson a fájlba vagy csőbe irányított kimenet a rendszer ANSI-kódlapját kapja (pl. a
+    cp1252-t), amelyben nincs „ő” és „ű”, így a kiírás ``UnicodeEncodeError``-ral leállna.
+    Az átirányított kimenet ezért UTF-8 lesz; a konzolra írt szöveg kódolása marad, de a nem
+    ábrázolható karaktereket csere jelöli kivétel helyett.
+    """
+    for stream in streams or (sys.stdout, sys.stderr):
+        if not isinstance(stream, io.TextIOWrapper):
+            continue
+        if (stream.encoding or "").lower().replace("-", "") == "utf8":
+            continue
+        try:
+            if stream.isatty():
+                stream.reconfigure(errors="replace")
+            else:
+                stream.reconfigure(encoding="utf-8")
+        except (OSError, ValueError):  # pragma: no cover - lezárt vagy nem átállítható adatfolyam
+            continue
+
+
+def run() -> None:
+    """A ``usertrail`` parancs belépési pontja."""
+    configure_streams()
+    app(prog_name="usertrail")
+
+
 if __name__ == "__main__":  # pragma: no cover
-    app()
+    run()

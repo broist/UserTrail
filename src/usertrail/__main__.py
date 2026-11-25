@@ -1,3 +1,3 @@
-from usertrail.cli import app
+from usertrail.cli import run
 
-app(prog_name="usertrail")
+run()

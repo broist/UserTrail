@@ -12,6 +12,12 @@ verziószámozás pedig a [Semantic Versioning](https://semver.org/lang/hu/) sza
 - Automatikus kiadási munkafolyamat (GitHub Actions): verziócímkére megépíti és a
   demo-vizsgálaton kipróbálja a futtatható fájlokat, majd létrehozza a release-t.
 
+### Javítva
+
+- Nem magyar nyelvű Windowson (pl. cp1252 kódlappal) a fájlba vagy csőbe irányított kimenet
+  `UnicodeEncodeError`-ral leállt az „ő” és „ű” betűknél. Az átirányított kimenet mostantól
+  UTF-8.
+
 ## [0.1.0] – 2026-11-25
 
 Az első nyilvános kiadás.
