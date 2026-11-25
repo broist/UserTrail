@@ -3,6 +3,15 @@
 A formátum a [Keep a Changelog](https://keepachangelog.com/hu/1.1.0/) ajánlását követi, a
 verziószámozás pedig a [Semantic Versioning](https://semver.org/lang/hu/) szabályait.
 
+## [0.1.1] – 2026-11-25
+
+### Új
+
+- **Önálló futtatható fájlok** Windowsra (x64), Linuxra (x64) és macOS-re (Apple Silicon):
+  Python telepítése nélkül futtathatók, a release-hez `SHA256SUMS.txt` hash-listával csatolva.
+- Automatikus kiadási munkafolyamat (GitHub Actions): verziócímkére megépíti és a
+  demo-vizsgálaton kipróbálja a futtatható fájlokat, majd létrehozza a release-t.
+
 ## [0.1.0] – 2026-11-25
 
 Az első nyilvános kiadás.
@@ -34,4 +43,5 @@ Az első nyilvános kiadás.
 - **Demo:** szintetikus demo-vizsgálat és mintariport az `examples/demo` mappában.
 - Magyar nyelvű CLI (a typer beépített feliratai is), dokumentáció és kód-kommentek.
 
+[0.1.1]: https://github.com/broist/UserTrail/releases/tag/v0.1.1
 [0.1.0]: https://github.com/broist/UserTrail/releases/tag/v0.1.0

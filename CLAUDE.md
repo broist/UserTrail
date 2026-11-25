@@ -348,7 +348,7 @@ Mindegyik végén legyenek zöld tesztek, és a funkció legyen kipróbálható 
 
 ## 21. Megvalósítási jegyzetek (fejlesztés közben frissítendő)
 
-- **Állapot:** mind a 10 mérföldkő kész, v0.1.0 kiadva (2026-11-25) (váz, CI, EVTX-olvasó, Security hitelesítési, fiókkezelési, jelszó-, zárolási és csoporttagsági események, SID-térkép átnevezéssel, konzolos kimenet).
+- **Állapot:** mind a 10 mérföldkő kész, v0.1.0 kiadva (2026-11-25), v0.1.1: önálló futtatható fájlok (váz, CI, EVTX-olvasó, Security hitelesítési, fiókkezelési, jelszó-, zárolási és csoporttagsági események, SID-térkép átnevezéssel, konzolos kimenet).
 - **4740 buktató:** a `TargetDomainName` mező itt a hívó gép neve (Caller Computer Name), nem tartomány; a parser `CallerComputerName` néven teszi a details-be, a célfiók tartománya üres marad.
 - **Csoportesemények:** a tag identitása csak a `MemberSid` (a DN-ből kinyert CN megjelenítendő név, nem sAMAccountName, ezért nem kerül a SID-térképbe). A leírásban a tag neve a DN CN-je; ha nincs DN, a SID-térképből feloldott név (`resolve_sid_only_names`), amely csak a megjelenítést módosítja, a tárolt identitást nem.
 - **Átnevezés (4781):** a régi név a `TimelineEvent.aliases` mezőbe kerül ugyanazzal a SID-del; a `SidMap.learn_event` ezt is megtanulja, az `IdentityQuery.build` pedig fixpontig bővít, így a régi és az új névvel is a teljes előzmény megtalálható.
@@ -372,6 +372,7 @@ Mindegyik végén legyenek zöld tesztek, és a funkció legyen kipróbálható 
 - **CI:** a tesztkörnyezet (`tests/conftest.py`, `pytest_configure`) kikapcsolja a typer/rich kényszerített színes kimenetét (GITHUB_ACTIONS, FORCE_COLOR), különben a CI-ban ANSI-kódok szabdalják szét a keresett szövegeket.
 - **Figyelmeztetések fiókkulcsa:** az `alerts.account_keyer` a sorokból tanult SID-térképpel egységesít: a csak névvel (pl. 4625 NULL SID) és a SID-del (4624) naplózott események ugyanahhoz a fiókhoz kerülnek.
 - **Demo:** `examples/build_demo.py` építi az `examples/demo/demo-case.db`-t (szintetikus, a `.gitignore` kivétellel engedi), a README képei a `docs/images` mappában.
+- **Futtatható fájl:** PyInstaller, `packaging/usertrail.spec` (belépési pont: `packaging/usertrail_entry.py`; begyűjti a sablont, a csomag metaadatát a verziószámhoz és a `tzdata`-t), `pip install ".[exe]"`. A `.github/workflows/release.yml` `v*` címkére Windows/Linux (ubuntu-22.04)/macOS arm64 fájlt épít, a demo-adatbázison füsttesztel, majd wheel, sdist és `SHA256SUMS.txt` mellett létrehozza a release-t (leírás a CHANGELOG-ból), vagy ha már létezik, feltölti hozzá a fájlokat.
 - **Licenc:** MIT.
 - **Nyelv:** a `--lang` alapértéke `hu` (`i18n.DEFAULT_LANG`). A typer/click beépített feliratait (Usage, Options, [default: …], --help, hibaüzenetek) a `usertrail/cli_hu.py` magyarítja induláskor, „legjobb igyekezet” elven: ha egy typer-frissítés megváltoztatja a belső neveket, a felirat angolra esik vissza; ezt a `tests/test_cli_hu.py` jelzi.
 - **Fejlesztői környezet (Windows):** Python 3.12 felhasználói telepítés, projekt-venv a `.venv` mappában (`pip install -e ".[dev]"`). Ellenőrzés: `.venv\Scripts\ruff check .`, `ruff format --check .`, `mypy`, `pytest`. A `ruff` a `*.md` fájlokat nem formázza (különben a specifikáció kódrészleteit átírná).

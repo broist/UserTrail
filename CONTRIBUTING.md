@@ -86,5 +86,19 @@ kizárja (a tesztfixture-ök és a demo-adatbázis kivételével).
 2. Zöld ellenőrzések helyben és a CI-ban.
 3. Csomag építése és próbatelepítése tiszta környezetbe: `python -m build` (vagy
    `pip wheel . --no-deps -w dist`), majd `pip install dist/usertrail-*.whl`.
-4. Címke: `git tag -a vX.Y.Z -m "..."` és `git push origin vX.Y.Z`, majd a GitHubon release a
-   címkéből, a CHANGELOG megfelelő részével és a `dist/` fájlokkal.
+4. Címke: `git tag -a vX.Y.Z -m "..."` és `git push origin vX.Y.Z`. A címke elindítja a
+   `Kiadás` munkafolyamatot (`.github/workflows/release.yml`): ez Windowsra, Linuxra és
+   macOS-re önálló futtatható fájlt épít, kipróbálja őket a demo-vizsgálaton, és a wheellel, a
+   forráscsomaggal és a `SHA256SUMS.txt` fájllal együtt létrehozza a release-t (a leírás a
+   CHANGELOG megfelelő része). Ha a release már létezik, csak a fájlokat tölti fel hozzá.
+
+## Futtatható fájl építése helyben
+
+```bash
+pip install -e ".[exe]"
+pyinstaller --noconfirm --clean --distpath build/exe --workpath build/pyi packaging/usertrail.spec
+```
+
+Az eredmény a `build/exe/usertrail(.exe)`. A `packaging/usertrail.spec` gyűjti be a
+HTML-sablont, a csomag metaadatát (verziószám) és a `tzdata` időzóna-adatbázist; ha új
+adatfájl kerül a csomagba, azt ott is fel kell venni.

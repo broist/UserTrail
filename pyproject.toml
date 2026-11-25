@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "usertrail"
-version = "0.1.0"
+version = "0.1.1"
 description = "Felhasználóközpontú Windows forensic idővonal-építő EVTX- és IIS-naplókhoz"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -40,6 +40,10 @@ dev = [
     "pytest-cov>=5.0",
     "ruff>=0.6",
     "mypy>=1.11",
+]
+# Önálló futtatható fájl építése (packaging/usertrail.spec).
+exe = [
+    "pyinstaller>=6.10",
 ]
 
 [project.scripts]

@@ -45,10 +45,43 @@ forrásból, és minden eseménynél jelzi, hogy a fiók **szereplő** volt (ő 
 
 ## Telepítés
 
+### Letölthető futtatható fájl (Python nélkül)
+
+A [Releases](https://github.com/broist/UserTrail/releases/latest) oldalon minden kiadáshoz van
+önálló futtatható fájl, amelyhez nem kell Pythont telepíteni:
+
+| Rendszer | Fájl |
+|---|---|
+| Windows (x64) | `usertrail-vX.Y.Z-windows-x64.exe` |
+| Linux (x64, glibc 2.35+) | `usertrail-vX.Y.Z-linux-x64` |
+| macOS (Apple Silicon) | `usertrail-vX.Y.Z-macos-arm64` |
+
+Letöltés után érdemes a hash-t összevetni a mellékelt `SHA256SUMS.txt` fájllal, majd a fájlt
+egyszerűen `usertrail.exe` (illetve `usertrail`) névre átnevezni:
+
+```powershell
+Get-FileHash .\usertrail-vX.Y.Z-windows-x64.exe -Algorithm SHA256
+.\usertrail.exe --version
+```
+
+Linuxon és macOS-en: `sha256sum` (illetve `shasum -a 256`), majd `chmod +x usertrail`.
+
+Tudnivalók:
+
+- A fájl nincs digitálisan aláírva, ezért a Windows SmartScreen az első indításkor
+  figyelmeztethet („Ismeretlen közzétevő”; *További információ → Futtatás mindenképp*). Egyes
+  vírusirtók a PyInstallerrel készült programokat tévesen gyanúsnak jelölhetik: a hash alapján
+  ellenőrizhető, hogy a fájl a kiadottal azonos. macOS-en a Gatekeeper miatt szükség lehet erre:
+  `xattr -d com.apple.quarantine usertrail`.
+- Az egyfájlos program indításkor kicsomagolja magát egy ideiglenes mappába, ezért 1–2
+  másodperccel lassabban indul, mint a pip-pel telepített változat.
+
+### Telepítés pip-pel
+
 Python 3.11 vagy újabb kell hozzá. A csomag még nincs a PyPI-n, a GitHubról telepíthető:
 
 ```bash
-pip install "git+https://github.com/broist/UserTrail.git@v0.1.0"
+pip install "git+https://github.com/broist/UserTrail.git@v0.1.1"
 usertrail --version
 ```
 

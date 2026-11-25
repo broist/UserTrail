@@ -1,0 +1,106 @@
+name: Kiadás
+
+# Verziócímke (vX.Y.Z) feltöltésekor önálló futtatható fájlokat épít Windowsra, Linuxra és
+# macOS-re, kipróbálja őket a demo-vizsgálaton, majd SHA-256 hash-ekkel együtt csatolja őket a
+# GitHub-release-hez. Kézzel indítva (workflow_dispatch) csak épít, nem ad ki.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Futtatható fájl – ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: windows-x64
+            ext: .exe
+          - os: ubuntu-22.04
+            label: linux-x64
+            ext: ""
+          - os: macos-latest
+            label: macos-arm64
+            ext: ""
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Telepítés
+        run: python -m pip install ".[exe]"
+      - name: Futtatható fájl építése
+        run: pyinstaller --noconfirm --clean --distpath build/exe --workpath build/pyi packaging/usertrail.spec
+      - name: Füstteszt a demo-vizsgálaton
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir smoke
+          cp "build/exe/usertrail${{ matrix.ext }}" examples/demo/demo-case.db smoke/
+          cd smoke
+          ./usertrail${{ matrix.ext }} --version
+          ./usertrail${{ matrix.ext }} timeline --case demo-case.db --user kovacs.janos --tz Europe/Budapest --collapse > /dev/null
+          ./usertrail${{ matrix.ext }} export --case demo-case.db --user kovacs.janos --tz Europe/Budapest --pivot-ip -f html -o riport.html
+          ./usertrail${{ matrix.ext }} sources --case demo-case.db > /dev/null
+          grep -q "kovacs.janos" riport.html
+      - name: Átnevezés a platform szerint
+        shell: bash
+        run: |
+          mkdir out
+          cp "build/exe/usertrail${{ matrix.ext }}" "out/usertrail-${{ github.ref_name }}-${{ matrix.label }}${{ matrix.ext }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: usertrail-${{ matrix.label }}
+          path: out/*
+          if-no-files-found: error
+
+  release:
+    name: Csatolás a release-hez
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Wheel és forráscsomag építése
+        run: |
+          python -m pip install build
+          python -m build --outdir assets
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - name: SHA-256 hash-ek
+        working-directory: assets
+        run: |
+          chmod +x usertrail-*-linux-x64 usertrail-*-macos-arm64
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Release létrehozása vagy frissítése
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          awk -v v="$VERSION" '
+            $0 ~ "^## \[" v "\]" {on=1; next}
+            on && /^## \[/ {exit}
+            on && /^\[[^]]+\]: / {next}
+            on {print}
+          ' CHANGELOG.md > notes.md
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" assets/* --clobber
+          else
+            gh release create "$TAG" assets/* --verify-tag --title "UserTrail $TAG" --notes-file notes.md
+          fi
