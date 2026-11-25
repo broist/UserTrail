@@ -84,9 +84,10 @@ def test_invalid_category_is_rejected(fake_evtx: Path) -> None:
     assert result.exit_code != 0
 
 
-def test_not_yet_implemented_commands_exit_2(tmp_path: Path) -> None:
+def test_sources_on_missing_case(tmp_path: Path) -> None:
     result = runner.invoke(app, ["sources", "--case", str(tmp_path / "case.db")])
-    assert result.exit_code == 2
+    assert result.exit_code == 1
+    assert "nem létezik" in result.output
 
 
 def test_default_language_is_hungarian(fake_evtx: Path) -> None:

@@ -67,6 +67,7 @@ def test_migration_from_schema_v1(tmp_path: Path) -> None:
     conn = sqlite3.connect(path)
     with conn:
         conn.execute("ALTER TABLE sources DROP COLUMN options")
+        conn.execute("ALTER TABLE sources DROP COLUMN coverage")
         conn.execute("UPDATE meta SET value = '1' WHERE key = 'schema_version'")
         conn.execute(
             "INSERT INTO sources(path, size, sha256, kind, ingested_at, tool_version) "
@@ -76,10 +77,11 @@ def test_migration_from_schema_v1(tmp_path: Path) -> None:
     with CaseStore.open(path) as case:
         (source,) = case.sources()
         assert source.options == {}
+        assert source.coverage == {}
         version = case.conn.execute(
             "SELECT value FROM meta WHERE key = 'schema_version'"
         ).fetchone()[0]
-        assert int(version) == SCHEMA_VERSION == 2
+        assert int(version) == SCHEMA_VERSION == 3
 
 
 def test_events_round_trip(store: CaseStore, all_events: list[TimelineEvent]) -> None:

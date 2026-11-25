@@ -83,6 +83,68 @@ MESSAGES: dict[str, dict[str, str]] = {
         "rdp_auth_success": "RDP network authentication succeeded for {target} from {src}",
         "script_block": "PowerShell script block run by {actor}: {preview}",
         # --- figyelmeztetések
+        "health.no_sources": "The case contains no processed source files.",
+        "health.incomplete_sources": (
+            "{count} source file(s) were not fully ingested; run ingest again for them."
+        ),
+        "health.record_errors": (
+            "{count} record(s) could not be processed; see the ingest output for samples."
+        ),
+        "health.missing.Security": (
+            "No Security log: it is the main source of logon, account and group events."
+        ),
+        "health.missing.System": "No System log: service installations (7045) are not visible.",
+        "health.missing.RDP-LSM": (
+            "No TerminalServices-LocalSessionManager log: RDP sessions (21/23/24/25) "
+            "are not visible."
+        ),
+        "health.missing.RDP-RCM": (
+            "No TerminalServices-RemoteConnectionManager log: RDP authentication (1149) "
+            "is not visible."
+        ),
+        "health.missing.PowerShell": (
+            "No PowerShell/Operational log: PowerShell script blocks (4104) are not visible."
+        ),
+        "health.missing.IIS": "No IIS log: web requests and the IP pivot are not available.",
+        "health.no_logon": (
+            "No 4624 event: logon auditing (Logon/Logoff > Audit Logon) is probably disabled."
+        ),
+        "health.no_logon_failure": (
+            "No 4625 event: either there were no failed logons, or failure auditing "
+            "(Logon/Logoff > Audit Logon, Failure) is disabled."
+        ),
+        "health.no_process_creation": (
+            "No 4688 event: process creation auditing "
+            "(Detailed Tracking > Audit Process Creation) is probably disabled."
+        ),
+        "health.no_command_line": (
+            "The 4688 events contain no command line: the policy 'Include command line in "
+            "process creation events' is disabled."
+        ),
+        "health.no_kerberos": (
+            "No Kerberos event (4768/4769/4771): the Security log is probably not from a domain "
+            "controller, or Kerberos auditing (Account Logon) is disabled."
+        ),
+        "health.no_account_management": (
+            "No account management event (4720–4781, group changes): the log is probably not "
+            "from a domain controller, or Account Management auditing is disabled."
+        ),
+        "health.no_scheduled_task": (
+            "No 4698 event: scheduled task auditing "
+            "(Object Access > Audit Other Object Access Events) is probably disabled."
+        ),
+        "health.short_coverage": (
+            "The Security log covers only {days} days ({first} – {last}), less than "
+            "{min_days}; older events were probably overwritten. Consider a larger maximum "
+            "log size."
+        ),
+        "health.no_script_block": (
+            "The PowerShell log has no 4104 event: Script Block Logging is disabled."
+        ),
+        "health.log_cleared": (
+            "The {source} log was cleared {count} time(s) ({source} {event_id}, first at "
+            "{first}); events before that are missing."
+        ),
         "alert.log_cleared": "Log cleared ({channel}) on {host} by {actor}",
         "alert.privileged_group_added": (
             "{member} was added to privileged group {group} (by {actor})"
@@ -184,6 +246,74 @@ MESSAGES: dict[str, dict[str, str]] = {
         "rdp_auth_success": "Sikeres RDP hálózati hitelesítés: {target}, forrás: {src}",
         "script_block": "PowerShell-szkriptblokk ({actor}): {preview}",
         # --- figyelmeztetések
+        "health.no_sources": "A vizsgálatban nincs feldolgozott forrásfájl.",
+        "health.incomplete_sources": (
+            "{count} forrásfájl betöltése nem fejeződött be; futtasd újra rájuk az ingestet."
+        ),
+        "health.record_errors": (
+            "{count} rekordot nem sikerült feldolgozni; a mintákat az ingest kimenete mutatja."
+        ),
+        "health.missing.Security": (
+            "Nincs Security-napló: a bejelentkezési, fiókkezelési és csoportesemények fő forrása."
+        ),
+        "health.missing.System": (
+            "Nincs System-napló: a szolgáltatástelepítések (7045) nem látszanak."
+        ),
+        "health.missing.RDP-LSM": (
+            "Nincs TerminalServices-LocalSessionManager napló: az RDP-munkamenetek "
+            "(21/23/24/25) nem látszanak."
+        ),
+        "health.missing.RDP-RCM": (
+            "Nincs TerminalServices-RemoteConnectionManager napló: az RDP-hitelesítés (1149) "
+            "nem látszik."
+        ),
+        "health.missing.PowerShell": (
+            "Nincs PowerShell/Operational napló: a PowerShell-szkriptblokkok (4104) nem látszanak."
+        ),
+        "health.missing.IIS": "Nincs IIS-napló: a webes kérések és az IP-pivot nem érhetők el.",
+        "health.no_logon": (
+            "Nincs 4624-es esemény: a bejelentkezések auditálása "
+            "(Logon/Logoff > Audit Logon) valószínűleg nincs bekapcsolva."
+        ),
+        "health.no_logon_failure": (
+            "Nincs 4625-ös esemény: vagy nem volt sikertelen bejelentkezés, vagy a hibák "
+            "auditálása (Logon/Logoff > Audit Logon, Failure) nincs bekapcsolva."
+        ),
+        "health.no_process_creation": (
+            "Nincs 4688-as esemény: a folyamatindítás auditálása "
+            "(Detailed Tracking > Audit Process Creation) valószínűleg nincs bekapcsolva."
+        ),
+        "health.no_command_line": (
+            "A 4688-as eseményekben nincs parancssor: az 'Include command line in process "
+            "creation events' házirend nincs bekapcsolva."
+        ),
+        "health.no_kerberos": (
+            "Nincs Kerberos-esemény (4768/4769/4771): a Security-napló valószínűleg nem "
+            "tartományvezérlőről származik, vagy a Kerberos-auditálás (Account Logon) nincs "
+            "bekapcsolva."
+        ),
+        "health.no_account_management": (
+            "Nincs fiókkezelési esemény (4720–4781, csoportváltozások): a napló valószínűleg "
+            "nem tartományvezérlőről származik, vagy az Account Management auditálás nincs "
+            "bekapcsolva."
+        ),
+        "health.no_scheduled_task": (
+            "Nincs 4698-as esemény: az ütemezett feladatok auditálása "
+            "(Object Access > Audit Other Object Access Events) valószínűleg nincs bekapcsolva."
+        ),
+        "health.short_coverage": (
+            "A Security-napló csak {days} napot fed le ({first} – {last}), kevesebbet, mint "
+            "{min_days}; a régebbi események valószínűleg felülíródtak. Érdemes nagyobb "
+            "maximális naplóméretet beállítani."
+        ),
+        "health.no_script_block": (
+            "A PowerShell-naplóban nincs 4104-es esemény: a szkriptblokk-naplózás "
+            "(Script Block Logging) nincs bekapcsolva."
+        ),
+        "health.log_cleared": (
+            "A(z) {source} naplót {count} alkalommal törölték ({source} {event_id}, először: "
+            "{first}); az azelőtti események hiányoznak."
+        ),
         "alert.log_cleared": "Napló törölve ({channel}) a(z) {host} gépen; végrehajtotta: {actor}",
         "alert.privileged_group_added": (
             "{member} kiemelt csoportba került: {group} (végrehajtotta: {actor})"
@@ -349,6 +479,22 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "col.severity": "Severity",
         "alerts.title": "Alerts",
         "rule.log_cleared": "Log cleared",
+        "sources.title": "Log sources",
+        "sources.files_title": "Processed source files",
+        "sources.findings": "Findings",
+        "sources.none": "No gaps found.",
+        "col.channel": "Source",
+        "col.files": "Files",
+        "col.records": "Records",
+        "col.events": "Timeline events",
+        "col.first": "Earliest",
+        "col.last": "Latest",
+        "col.days": "Days",
+        "col.path": "Path",
+        "col.kind": "Type",
+        "col.errors": "Errors",
+        "level.warning": "warning",
+        "level.info": "info",
         "rule.privileged_group_added": "Privileged group",
         "rule.account_locked": "Account lockout",
         "rule.failed_logon_burst": "Failed logons",
@@ -381,6 +527,22 @@ UI_TEXT: dict[str, dict[str, str]] = {
         "col.severity": "Súlyosság",
         "alerts.title": "Figyelmeztetések",
         "rule.log_cleared": "Naplótörlés",
+        "sources.title": "Naplóforrások",
+        "sources.files_title": "Feldolgozott forrásfájlok",
+        "sources.findings": "Megállapítások",
+        "sources.none": "Nem találtam hiányosságot.",
+        "col.channel": "Forrás",
+        "col.files": "Fájl",
+        "col.records": "Rekord",
+        "col.events": "Idővonal-esemény",
+        "col.first": "Legkorábbi",
+        "col.last": "Legkésőbbi",
+        "col.days": "Nap",
+        "col.path": "Útvonal",
+        "col.kind": "Típus",
+        "col.errors": "Hiba",
+        "level.warning": "figyelmeztetés",
+        "level.info": "információ",
         "rule.privileged_group_added": "Kiemelt csoport",
         "rule.account_locked": "Fiókzárolás",
         "rule.failed_logon_burst": "Sikertelen bejelentkezések",

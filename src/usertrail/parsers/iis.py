@@ -137,4 +137,5 @@ def read_iis(path: Path, stats: ReadStats, tz: tzinfo | None = None) -> Iterator
                 stats.add_error(f"{source}#{line_no}: {exc}")
                 continue
             stats.records += 1
+            stats.observe(SOURCE, event.timestamp_utc)
             yield event

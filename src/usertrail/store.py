@@ -22,7 +22,7 @@ from usertrail import __version__
 from usertrail.identity import SidMap, is_machine_account, well_known_label
 from usertrail.models import Category, Identity, Severity, TimelineEvent
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 BATCH_SIZE = 5000
 _HASH_CHUNK = 1024 * 1024
 
@@ -47,7 +47,8 @@ CREATE TABLE IF NOT EXISTS sources (
     errors INTEGER NOT NULL DEFAULT 0,
     error_samples TEXT NOT NULL DEFAULT '[]',
     completed INTEGER NOT NULL DEFAULT 0,
-    options TEXT NOT NULL DEFAULT '{}'
+    options TEXT NOT NULL DEFAULT '{}',
+    coverage TEXT NOT NULL DEFAULT '{}'
 );
 CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY,
@@ -120,6 +121,8 @@ class SourceInfo:
     error_samples: list[str]
     completed: bool
     options: dict[str, Any]
+    # Csatornánkénti lefedettség: {csatorna: {records, first, last}} (a 3-as sémától).
+    coverage: dict[str, Any]
 
 
 @dataclass(slots=True)
@@ -220,6 +223,9 @@ class CaseStore:
                 version = int(row["value"])
                 if version == 1:
                     self._migrate_v1_to_v2()
+                    version = 2
+                if version == 2:
+                    self._migrate_v2_to_v3()
                 elif version != SCHEMA_VERSION:
                     raise StoreError(
                         f"nem támogatott adatbázis-sémaverzió: {version} (várt: {SCHEMA_VERSION})"
@@ -227,8 +233,22 @@ class CaseStore:
 
     def _migrate_v1_to_v2(self) -> None:
         """1 -> 2: a sources tábla ``options`` oszlopot kap (pl. az IIS-időzónához)."""
-        self.conn.execute("ALTER TABLE sources ADD COLUMN options TEXT NOT NULL DEFAULT '{}'")
+        self._add_column_if_missing("sources", "options", "TEXT NOT NULL DEFAULT '{}'")
         self.conn.execute("UPDATE meta SET value = '2' WHERE key = 'schema_version'")
+
+    def _migrate_v2_to_v3(self) -> None:
+        """2 -> 3: a sources tábla ``coverage`` oszlopot kap (csatornánkénti lefedettség).
+
+        A korábban betöltött fájloknál üres marad; ilyenkor a ``sources`` parancs az
+        események időtartományából becsül.
+        """
+        self._add_column_if_missing("sources", "coverage", "TEXT NOT NULL DEFAULT '{}'")
+        self.conn.execute("UPDATE meta SET value = '3' WHERE key = 'schema_version'")
+
+    def _add_column_if_missing(self, table: str, column: str, definition: str) -> None:
+        existing = {row["name"] for row in self.conn.execute(f"PRAGMA table_info({table})")}
+        if column not in existing:
+            self.conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     def close(self) -> None:
         self.conn.close()
@@ -271,13 +291,19 @@ class CaseStore:
         return cursor.lastrowid
 
     def finish_source(
-        self, source_id: int, records: int, events: int, errors: int, error_samples: list[str]
+        self,
+        source_id: int,
+        records: int,
+        events: int,
+        errors: int,
+        error_samples: list[str],
+        coverage: dict[str, Any] | None = None,
     ) -> None:
         with self.conn:
             self.conn.execute(
                 "UPDATE sources SET records = ?, events = ?, errors = ?, error_samples = ?, "
-                "completed = 1 WHERE id = ?",
-                (records, events, errors, _json(error_samples), source_id),
+                "coverage = ?, completed = 1 WHERE id = ?",
+                (records, events, errors, _json(error_samples), _json(coverage or {}), source_id),
             )
 
     def discard_source(self, source_id: int) -> None:
@@ -311,6 +337,7 @@ class CaseStore:
             error_samples=json.loads(row["error_samples"]),
             completed=bool(row["completed"]),
             options=json.loads(row["options"]),
+            coverage=json.loads(row["coverage"]),
         )
 
     # --- események -------------------------------------------------------------------
@@ -464,6 +491,45 @@ class CaseStore:
             params,
         ).fetchall()
         return self._events_from_rows(rows)
+
+    def event_counts(self) -> dict[tuple[str, str], int]:
+        """Leképezett események száma (forrás, Event ID) szerint."""
+        rows = self.conn.execute(
+            "SELECT source, event_id, COUNT(*) AS n FROM events GROUP BY source, event_id"
+        )
+        return {(row["source"], row["event_id"]): int(row["n"]) for row in rows}
+
+    def event_time_ranges(self) -> dict[str, tuple[datetime, datetime]]:
+        """Forrásonként a legkorábbi és a legkésőbbi leképezett esemény ideje."""
+        rows = self.conn.execute(
+            "SELECT source, MIN(timestamp_utc) AS first, MAX(timestamp_utc) AS last "
+            "FROM events GROUP BY source"
+        )
+        return {
+            row["source"]: (
+                datetime.fromisoformat(row["first"]),
+                datetime.fromisoformat(row["last"]),
+            )
+            for row in rows
+        }
+
+    def count_without_detail(self, source: str, event_id: str, detail: str) -> int:
+        """Azoknak az eseményeknek a száma, amelyek details-éből hiányzik a megadott mező."""
+        row = self.conn.execute(
+            "SELECT COUNT(*) FROM events WHERE source = ? AND event_id = ? "
+            "AND json_extract(details, ?) IS NULL",
+            (source, event_id, f"$.{detail}"),
+        ).fetchone()
+        return int(row[0])
+
+    def first_event_time(self, source: str, event_ids: Iterable[str]) -> datetime | None:
+        ids = list(event_ids)
+        row = self.conn.execute(
+            f"SELECT MIN(timestamp_utc) FROM events WHERE source = ? "
+            f"AND event_id IN ({','.join('?' * len(ids))})",
+            (source, *ids),
+        ).fetchone()
+        return datetime.fromisoformat(row[0]) if row and row[0] else None
 
     def event_count(self) -> int:
         return int(self.conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])

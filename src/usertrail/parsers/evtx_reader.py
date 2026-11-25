@@ -52,11 +52,40 @@ class ReadStats:
     records: int = 0
     errors: int = 0
     error_samples: list[str] = field(default_factory=list)
+    # Csatornánkénti lefedettség: rekordszám és a legkorábbi/legkésőbbi időbélyeg (az összes
+    # beolvasott rekordból, nem csak a leképezett eseményekből).
+    coverage: dict[str, ChannelCoverage] = field(default_factory=dict)
 
     def add_error(self, message: str) -> None:
         self.errors += 1
         if len(self.error_samples) < MAX_ERROR_SAMPLES:
             self.error_samples.append(message)
+
+    def observe(self, channel: str, timestamp: datetime) -> None:
+        item = self.coverage.get(channel)
+        if item is None:
+            self.coverage[channel] = ChannelCoverage(1, timestamp, timestamp)
+            return
+        item.records += 1
+        item.first = min(item.first, timestamp)
+        item.last = max(item.last, timestamp)
+
+    def coverage_json(self) -> dict[str, dict[str, Any]]:
+        return {
+            channel: {
+                "records": item.records,
+                "first": item.first.isoformat(),
+                "last": item.last.isoformat(),
+            }
+            for channel, item in sorted(self.coverage.items())
+        }
+
+
+@dataclass(slots=True)
+class ChannelCoverage:
+    records: int
+    first: datetime
+    last: datetime
 
 
 def _scalar(value: Any) -> Any:

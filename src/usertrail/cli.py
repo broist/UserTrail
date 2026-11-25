@@ -19,10 +19,12 @@ from rich.progress import (
 )
 from rich.table import Table
 
-from usertrail import __version__, cli_hu
+from usertrail import __version__, cli_hu, health
 from usertrail.alerts import AlertConfig
 from usertrail.correlate import DEFAULT_COLLAPSE_GAP, DEFAULT_WINDOW
 from usertrail.engine import EngineError, TimelineRequest, TimelineResult, build_timeline
+from usertrail.health import DEFAULT_MIN_DAYS
+from usertrail.i18n import ui
 from usertrail.models import Category, Severity, TimelineEvent
 from usertrail.parsers.evtx_reader import ReadStats
 from usertrail.pipeline import KIND_IIS, SourceFile, discover_sources, iter_events
@@ -211,11 +213,6 @@ def _parse_categories(value: str | None) -> frozenset[Category] | None:
                 param_hint="--category",
             ) from None
     return frozenset(result)
-
-
-def _not_yet(milestone: int) -> None:
-    err.print(f"[yellow]Ez még nincs kész (a {milestone}. mérföldkőben készül el).[/yellow]")
-    raise typer.Exit(code=2)
 
 
 def _make_request(
@@ -596,7 +593,12 @@ def ingest(
 
                 inserted = store.insert_events(source_id, counted())
                 store.finish_source(
-                    source_id, stats.records, inserted, stats.errors, stats.error_samples
+                    source_id,
+                    stats.records,
+                    inserted,
+                    stats.errors,
+                    stats.error_samples,
+                    stats.coverage_json(),
                 )
                 total_errors += stats.errors
                 results.append((str(path), "betöltve", stats.records, inserted, stats.errors))
@@ -622,9 +624,76 @@ def ingest(
 
 
 @app.command()
-def sources(case: Annotated[Path, typer.Option("--case")]) -> None:
-    """Megmutatja, milyen naplóforrások állnak rendelkezésre, és mi hiányzik."""
-    _not_yet(9)
+def sources(
+    case: Annotated[Path, typer.Option("--case", help="Vizsgálati adatbázisfájl.")],
+    tz: TzOpt = None,
+    min_days: Annotated[
+        int,
+        typer.Option(
+            "--min-days",
+            min=1,
+            help="Ennél rövidebb Security-lefedettség felülírásra utaló figyelmeztetést ad.",
+        ),
+    ] = DEFAULT_MIN_DAYS,
+    lang: LangOpt = Lang.hu,
+) -> None:
+    """Megmutatja, milyen naplóforrások és események állnak rendelkezésre, és mi hiányzik."""
+    display_tz, _, _ = _time_options(tz, None, None)
+    lang_code = lang.value
+    with _open_case(case) as store:
+        summaries = health.summarize(store)
+        findings = health.check(store, summaries, min_days=min_days, tz=display_tz)
+        files = store.sources()
+
+    console = Console()
+    table = Table(
+        title=f"{ui('sources.title', lang_code)}: {case}",
+        caption=f"{ui('header.tz', lang_code)}: {tz_label(display_tz, lang_code)}",
+    )
+    table.add_column(ui("col.channel", lang_code))
+    table.add_column(ui("col.files", lang_code), justify="right")
+    table.add_column(ui("col.records", lang_code), justify="right")
+    table.add_column(ui("col.events", lang_code), justify="right")
+    table.add_column(ui("col.first", lang_code), no_wrap=True)
+    table.add_column(ui("col.last", lang_code), no_wrap=True)
+    table.add_column(ui("col.days", lang_code), justify="right")
+    for item in summaries:
+        span = item.span
+        table.add_row(
+            item.source,
+            str(item.files) if item.files else "-",
+            str(item.records) if item.records is not None else "-",
+            str(item.events),
+            format_display(item.first, display_tz) if item.first else "-",
+            format_display(item.last, display_tz) if item.last else "-",
+            f"{span.total_seconds() / 86400:.1f}" if span is not None else "-",
+        )
+    console.print(table)
+
+    files_table = Table(title=ui("sources.files_title", lang_code))
+    files_table.add_column(ui("col.path", lang_code), overflow="fold")
+    files_table.add_column(ui("col.kind", lang_code))
+    files_table.add_column("SHA-256", overflow="fold")
+    files_table.add_column(ui("col.records", lang_code), justify="right")
+    files_table.add_column(ui("col.errors", lang_code), justify="right")
+    for info in files:
+        files_table.add_row(
+            info.path,
+            info.kind,
+            info.sha256,
+            str(info.records),
+            str(info.errors),
+            style="yellow" if info.errors or not info.completed else "",
+        )
+    console.print(files_table)
+
+    console.print(f"[bold]{ui('sources.findings', lang_code)}[/bold]")
+    if not findings:
+        console.print(f"[green]{ui('sources.none', lang_code)}[/green]")
+    for finding in findings:
+        style = "yellow" if finding.level is health.Level.WARNING else "cyan"
+        marker = "!" if finding.level is health.Level.WARNING else "i"
+        console.print(f"[{style}]{marker} {finding.text(lang_code)}[/{style}]")
 
 
 @app.command()

@@ -63,6 +63,7 @@ def iter_events(
                 continue
             dispatcher = Dispatcher()
             for record in read_evtx(source.path, stats):
+                stats.observe(record.channel, record.timestamp_utc)
                 try:
                     yield from dispatcher.parse(record)
                 except Exception as exc:  # egy hibás rekord sosem állíthatja le a futást

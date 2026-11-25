@@ -13,10 +13,11 @@ eseményeket. A UserTrail identitásközpontú: egy fiók teljes történetét r
 forrásból, és minden eseménynél jelzi, hogy a fiók **szereplő** volt (ő csinálta) vagy
 **célpont** (vele csinálták).
 
-> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–8. mérföldkő: EVTX- és IIS-naplók
+> **Állapot:** korai fejlesztés (pre-alpha). Kész az 1–9. mérföldkő: EVTX- és IIS-naplók
 > betöltése SQLite vizsgálati adatbázisba (SHA-256 hash-sel, duplikáció-szűréssel), illetve
 > közvetlen olvasása, IP-pivot a webes kérésekre, figyelmeztetések, a zajos események
-> összevonása, CSV-, JSON Lines- és önálló HTML-riport, és az alábbi események:
+> összevonása, CSV-, JSON Lines- és önálló HTML-riport, forrásállapot-ellenőrzés, és az
+> alábbi események:
 >
 > - bejelentkezés: 4624, 4625, 4634, 4647, 4648, 4672
 > - fiókok életciklusa: 4720, 4722, 4725, 4726, 4738, 4781 (átnevezés után a régi és az új
@@ -103,6 +104,25 @@ bejelentkezéseinek** IP-címeiről érkeztek a bejelentkezés előtt/után ±`-
 belül. Ezek **„korrelált (IP)”** jelölést kapnak, mert nem bizonyítják, hogy a kérést ugyanaz a
 felhasználó küldte (ugyanarról az IP-ről mások is dolgozhattak, pl. NAT vagy terminálszerver
 mögül).
+
+### Forrásállapot-ellenőrzés: mi hiányzik?
+
+```bash
+usertrail sources --case ugy.db --tz Europe/Budapest
+```
+
+Az eszköz csak abból dolgozik, ami a naplókban benne van: ha egy esemény nem látszik, az nem
+jelenti, hogy meg sem történt. A `sources` parancs megmutatja, milyen naplóforrások vannak a
+vizsgálatban (fájlok, rekordok, idővonal-események, a legkorábbi és a legkésőbbi időpont), és
+jelzi a hiányosságokat, például:
+
+- hiányzó napló (Security, System, RDP, PowerShell, IIS), és hogy emiatt mi nem látszik;
+- kikapcsoltnak tűnő auditálás (pl. nincs 4688: *Detailed Tracking > Audit Process Creation*;
+  nincs parancssor a 4688-ban; nincs 4104: *Script Block Logging*), a bekapcsolandó házirend
+  nevével;
+- ha a Security-napló túl rövid időszakot fed le (`--min-days`, alapból 7 nap), ami
+  napló-felülírásra utal;
+- naplótörlés (1102, 104), hibás rekordok, félbeszakadt betöltés.
 
 ### Exportálás: CSV, JSON Lines, HTML-riport
 
