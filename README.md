@@ -97,7 +97,37 @@ pip install -e ".[dev]"
 
 ## Gyors kezdés
 
-Saját naplókkal, három paranccsal:
+### A gép aktuális naplóiból (élő gyűjtés)
+
+Windowson, **rendszergazdaként** futtatott PowerShellből vagy parancssorból egyetlen parancs
+elég: a UserTrail a gép mindenkori legfrissebb naplóiból dolgozik.
+
+```powershell
+.\usertrail.exe users
+.\usertrail.exe timeline --user kovacs.janos --from 2026-11-01
+.\usertrail.exe export --user kovacs.janos --from 2026-11-01 -o riport.html
+.\usertrail.exe sources
+```
+
+Ha sem `--case`, sem `--source` nincs megadva, a program:
+
+1. a Windows saját `wevtutil epl` parancsával pillanatképet ment a Security, a System, az RDP-
+   és a PowerShell-naplóról egy ideiglenes mappába (a `--from` időszakkal szűrve, így gyorsabb),
+   és a mentett másolatból dolgozik, a hash-ét is abból számolja. Az élő naplókat semmi nem
+   módosítja;
+2. az IIS-naplók helyét a `applicationHost.config` fájlból olvassa ki (webhelyenként), és ezeket
+   a helyükön, csak olvasásra nyitja meg;
+3. a futás végén törli az ideiglenes másolatokat. A `--save-logs <mappa>` megőrzi őket, például
+   hogy a riport hash-ei később is ellenőrizhetők legyenek.
+
+A Security naplóhoz rendszergazdai jog kell; enélkül a program figyelmeztet, és a többi naplóból
+dolgozik. Az IIS-naplók a `--no-iis` kapcsolóval kihagyhatók. A riport futtatási paraméterei
+(`live`) rögzítik a gép nevét, a gyűjtés idejét és csatornánként a mentés eredményét. Az éppen
+írt IIS-naplófájl hash-e a feldolgozás után még változhat.
+
+### Begyűjtött naplókból
+
+Másik gépről kimásolt naplókkal, három paranccsal:
 
 ```bash
 usertrail ingest ./bizonyitekok/ --case ugy.db
@@ -131,13 +161,16 @@ tesztek szintetikus fixture-jeiből. **Minden adat kitalált.**
 | Parancs | Mire való |
 |---|---|
 | `ingest <útvonal>... --case ugy.db` | Naplók betöltése vizsgálati adatbázisba (hash-ek, duplikáció-szűrés, folyamatjelző) |
-| `sources --case ugy.db` | Milyen naplók és események vannak, és mi hiányzik |
-| `users --case ugy.db` | Az összes ismert fiók, SID szerint összevonva, első és utolsó eseménnyel |
-| `timeline --case ugy.db --user ...` | Egy fiók (vagy IP) idővonala a konzolon |
-| `export --case ugy.db --user ... -f html\|csv\|json -o fájl` | Idővonal fájlba |
+| `sources [--case ugy.db]` | Milyen naplók és események vannak, és mi hiányzik |
+| `users [--case ugy.db]` | Az összes ismert fiók, SID szerint összevonva, első és utolsó eseménnyel |
+| `timeline [--case ugy.db] --user ...` | Egy fiók (vagy IP) idővonala a konzolon |
+| `export [--case ugy.db] --user ... -f html\|csv\|json -o fájl` | Idővonal fájlba |
 
-A `timeline` és az `export` adatbázis nélkül, közvetlenül a naplófájlokból is dolgozhat:
-`--source ./mappa/` (gyors vizsgálathoz).
+A `timeline`, az `export`, a `users` és a `sources` három forrásból dolgozhat:
+
+- **semmi megadása nélkül** a futtató gép aktuális naplóiból (élő gyűjtés, lásd fent);
+- `--source ./mappa/`: közvetlenül naplófájlokból, adatbázis nélkül (csak `timeline`, `export`);
+- `--case ugy.db`: egy korábban betöltött vizsgálati adatbázisból.
 
 A `--user` elfogadja a `DOMAIN\felhasználó`, az UPN (`felhasználó@domain`) és a puszta név
 alakot, a `--sid` SID-et vár, az `--ip` forrás-IP-re szűr (a `--user`-rel együtt szűkít). A nevek

@@ -1,9 +1,12 @@
 """Parancssori felület."""
 
+import contextlib
+import dataclasses
 import enum
 import io
 import sqlite3
 import sys
+import tempfile
 from collections.abc import Iterator
 from datetime import datetime, time, timedelta, tzinfo
 from pathlib import Path
@@ -21,7 +24,7 @@ from rich.progress import (
 )
 from rich.table import Table
 
-from usertrail import __version__, cli_hu, health
+from usertrail import __version__, cli_hu, health, live
 from usertrail.alerts import AlertConfig
 from usertrail.correlate import DEFAULT_COLLAPSE_GAP, DEFAULT_WINDOW
 from usertrail.engine import EngineError, TimelineRequest, TimelineResult, build_timeline
@@ -66,8 +69,27 @@ SourceOpt = Annotated[
     ),
 ]
 CaseOpt = Annotated[
-    Path | None, typer.Option("--case", help="Vizsgálati adatbázis (lásd: ingest).")
+    Path | None,
+    typer.Option(
+        "--case",
+        help=(
+            "Vizsgálati adatbázis (lásd: ingest). Ha sem ezt, sem a --source kapcsolót nem "
+            "adod meg, a program a futtató gép aktuális naplóiból dolgozik."
+        ),
+    ),
 ]
+SaveLogsOpt = Annotated[
+    Path | None,
+    typer.Option(
+        "--save-logs",
+        file_okay=False,
+        help=(
+            "Élő gyűjtésnél a gépről mentett naplók megőrzése ebben a mappában "
+            "(alapértelmezés: ideiglenes mappa, amely a futás végén törlődik)."
+        ),
+    ),
+]
+NoIisOpt = Annotated[bool, typer.Option("--no-iis", help="Élő gyűjtésnél az IIS-naplók kihagyása.")]
 UserOpt = Annotated[
     str | None,
     typer.Option("--user", "-u", help="DOMAIN\\felhasználó, UPN vagy felhasználónév."),
@@ -243,8 +265,6 @@ def _make_request(
     """A kapcsolók ellenőrzése és összegyűjtése egy lekérdezésbe."""
     if case is not None and source:
         raise typer.BadParameter("a --case és a --source közül csak az egyiket add meg")
-    if case is None and not source:
-        raise typer.BadParameter("adj meg --case adatbázist vagy --source útvonalat")
     if not (user or sid or ip):
         raise typer.BadParameter("adj meg --user, --sid vagy --ip kapcsolót")
     display_tz, start, end = _time_options(tz, from_, to)
@@ -298,6 +318,11 @@ def _print_summary(result: TimelineResult) -> None:
     req = result.request
     if req.case is not None:
         summary = f"{req.case}: {result.candidate_count} jelölt esemény"
+    elif req.live is not None:
+        summary = (
+            f"Élő gyűjtés ({req.live.get('host')}): {result.records_read} rekord beolvasva, "
+            f"{result.candidate_count} leképezett esemény"
+        )
     else:
         summary = (
             f"{len(result.sources)} fájlból {result.records_read} rekord beolvasva, "
@@ -319,6 +344,70 @@ def _print_summary(result: TimelineResult) -> None:
         )
     if result.error_count:
         _print_errors(result.error_count, result.error_samples)
+
+
+@contextlib.contextmanager
+def _live_snapshot(
+    save_logs: Path | None, since: datetime | None = None, *, include_iis: bool = True
+) -> Iterator[live.LiveSnapshot]:
+    """Az élő gép naplóinak mentése; ideiglenes mappa esetén a végén törli a másolatokat."""
+    with contextlib.ExitStack() as stack:
+        if save_logs is not None:
+            stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+            folder = save_logs / f"usertrail-{stamp}"
+        else:
+            folder = Path(
+                stack.enter_context(
+                    tempfile.TemporaryDirectory(prefix="usertrail-", ignore_cleanup_errors=True)
+                )
+            )
+        try:
+            with err.status("Az aktuális naplók mentése...") as status:
+                snapshot = live.collect(
+                    folder, since=since, include_iis=include_iis, on_status=status.update
+                )
+        except live.LiveError as exc:
+            err.print(f"[red]{str(exc)[:1].upper()}{str(exc)[1:]}.[/red]")
+            raise typer.Exit(code=1) from None
+        except OSError as exc:
+            err.print(f"[red]A naplók mentése nem sikerült: {exc}[/red]")
+            raise typer.Exit(code=1) from None
+        _print_snapshot(snapshot, kept=save_logs is not None)
+        if not snapshot.paths:
+            err.print("[red]Egyetlen napló sem volt menthető, nincs mit feldolgozni.[/red]")
+            raise typer.Exit(code=1)
+        yield snapshot
+
+
+def _print_snapshot(snapshot: live.LiveSnapshot, *, kept: bool) -> None:
+    saved = [c.channel for c in snapshot.channels if c.path is not None]
+    err.print(f"[dim]Élő gyűjtés: {snapshot.host}, {len(saved)} napló mentve.[/dim]")
+    for item in snapshot.channels:
+        if item.path is None:
+            err.print(f"[yellow]  - {item.channel}: {item.error}[/yellow]")
+    if snapshot.access_denied and not live.is_admin():
+        err.print(
+            "[yellow]A Security naplóhoz rendszergazdai jog kell: indítsd a parancsot "
+            "rendszergazdaként futtatott PowerShellből vagy parancssorból.[/yellow]"
+        )
+    for folder in snapshot.iis_dirs:
+        err.print(f"[dim]  IIS-naplók (helyben olvasva): {folder}[/dim]")
+    if kept:
+        err.print(f"[dim]  A mentett naplók helye: {snapshot.folder}[/dim]")
+
+
+@contextlib.contextmanager
+def _live_request(
+    request: TimelineRequest, save_logs: Path | None, *, include_iis: bool = True
+) -> Iterator[TimelineRequest]:
+    """Ha nincs --case és --source, az aktuális gép naplóiból készít lekérdezést."""
+    if request.case is not None or request.sources:
+        if save_logs is not None:
+            err.print("[yellow]A --save-logs csak élő gyűjtésnél érvényes.[/yellow]")
+        yield request
+        return
+    with _live_snapshot(save_logs, request.start, include_iis=include_iis) as snapshot:
+        yield dataclasses.replace(request, sources=tuple(snapshot.paths), live=snapshot.describe())
 
 
 @app.command()
@@ -343,9 +432,16 @@ def timeline(
     pivot_ip: PivotIpOpt = False,
     pivot_window: PivotWindowOpt = DEFAULT_PIVOT_WINDOW_MIN,
     iis_tz: IisTzOpt = None,
+    save_logs: SaveLogsOpt = None,
+    no_iis: NoIisOpt = False,
     lang: LangOpt = Lang.hu,
 ) -> None:
-    """Egy fiók (vagy egy forrás-IP) idővonalának megjelenítése."""
+    """Egy fiók (vagy egy forrás-IP) idővonalának megjelenítése.
+
+    Kapcsolók nélkül a futtató gép aktuális naplóiból dolgozik (élő gyűjtés, Windowson,
+    rendszergazdaként); a --source naplófájlokat vagy mappákat, a --case egy vizsgálati
+    adatbázist dolgoz fel.
+    """
     request = _make_request(
         source=source,
         case=case,
@@ -368,7 +464,8 @@ def timeline(
         pivot_window=pivot_window,
         iis_tz=iis_tz,
     )
-    result = _run(request)
+    with _live_request(request, save_logs, include_iis=not no_iis) as request:
+        result = _run(request)
     print_timeline(
         result.rows,
         request.display_tz,
@@ -411,6 +508,8 @@ def export(
     pivot_ip: PivotIpOpt = False,
     pivot_window: PivotWindowOpt = DEFAULT_PIVOT_WINDOW_MIN,
     iis_tz: IisTzOpt = None,
+    save_logs: SaveLogsOpt = None,
+    no_iis: NoIisOpt = False,
     lang: LangOpt = Lang.hu,
 ) -> None:
     """Idővonal exportálása CSV, JSON Lines vagy önálló HTML-riport formában.
@@ -441,7 +540,8 @@ def export(
         pivot_window=pivot_window,
         iis_tz=iis_tz,
     )
-    result = _run(request)
+    with _live_request(request, save_logs, include_iis=not no_iis) as request:
+        result = _run(request)
     try:
         written = write_export(result, format_, output, lang.value)
     except OSError as exc:
@@ -521,6 +621,73 @@ def _print_errors(count: int, samples: list[str]) -> None:
         err.print(f"  [yellow]... és további {count - len(samples)}[/yellow]")
 
 
+IngestRow = tuple[str, str, int, int, int]
+
+
+def _ingest_files(
+    store: CaseStore, files: list[SourceFile], iis_tz: str | None, iis_zone: tzinfo | None
+) -> tuple[list[IngestRow], int]:
+    """A forrásfájlok betöltése az adatbázisba folyamatjelzővel; (sorok, hibák száma)."""
+    results: list[IngestRow] = []
+    total_errors = 0
+    progress = Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TextColumn("{task.fields[records]} rekord"),
+        TimeElapsedColumn(),
+        console=err,
+    )
+    with progress:
+        overall = progress.add_task("Fájlok", total=len(files), records=0)
+        for source_file in files:
+            path = source_file.path
+            progress.update(overall, description=f"Hash: {path.name}")
+            digest = sha256_file(path)
+            existing = store.find_source(digest)
+            if existing is not None and existing.completed:
+                results.append((str(path), "már betöltve", existing.records, 0, 0))
+                progress.advance(overall)
+                continue
+            if existing is not None:
+                # Félbeszakadt korábbi feldolgozás: a részleges adatokat eldobjuk.
+                store.discard_source(existing.id)
+
+            progress.update(overall, description=f"Feldolgozás: {path.name}")
+            options = {"iis_tz": iis_tz or "UTC"} if source_file.kind == KIND_IIS else {}
+            source_id = store.add_source(
+                path, path.stat().st_size, digest, source_file.kind, options
+            )
+            stats = ReadStats()
+
+            def counted(
+                source_file: SourceFile = source_file, stats: ReadStats = stats
+            ) -> Iterator[TimelineEvent]:
+                events = iter_events([source_file], stats, iis_zone)
+                for number, event in enumerate(events, start=1):
+                    if number % 1000 == 0:
+                        progress.update(overall, records=stats.records)
+                    yield event
+
+            inserted = store.insert_events(source_id, counted())
+            store.finish_source(
+                source_id,
+                stats.records,
+                inserted,
+                stats.errors,
+                stats.error_samples,
+                stats.coverage_json(),
+            )
+            total_errors += stats.errors
+            results.append((str(path), "betöltve", stats.records, inserted, stats.errors))
+            if stats.errors:
+                _print_errors(stats.errors, stats.error_samples)
+            progress.update(overall, records=stats.records)
+            progress.advance(overall)
+    return results, total_errors
+
+
 @app.command()
 def ingest(
     paths: Annotated[
@@ -550,64 +717,8 @@ def ingest(
         err.print("[red]Nem található támogatott naplófájl (.evtx vagy IIS .log).[/red]")
         raise typer.Exit(code=1)
 
-    results: list[tuple[str, str, int, int, int]] = []
-    total_errors = 0
     with _open_case(case, create=True) as store:
-        progress = Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            MofNCompleteColumn(),
-            TextColumn("{task.fields[records]} rekord"),
-            TimeElapsedColumn(),
-            console=err,
-        )
-        with progress:
-            overall = progress.add_task("Fájlok", total=len(files), records=0)
-            for source_file in files:
-                path = source_file.path
-                progress.update(overall, description=f"Hash: {path.name}")
-                digest = sha256_file(path)
-                existing = store.find_source(digest)
-                if existing is not None and existing.completed:
-                    results.append((str(path), "már betöltve", existing.records, 0, 0))
-                    progress.advance(overall)
-                    continue
-                if existing is not None:
-                    # Félbeszakadt korábbi feldolgozás: a részleges adatokat eldobjuk.
-                    store.discard_source(existing.id)
-
-                progress.update(overall, description=f"Feldolgozás: {path.name}")
-                options = {"iis_tz": iis_tz or "UTC"} if source_file.kind == KIND_IIS else {}
-                source_id = store.add_source(
-                    path, path.stat().st_size, digest, source_file.kind, options
-                )
-                stats = ReadStats()
-
-                def counted(
-                    source_file: SourceFile = source_file, stats: ReadStats = stats
-                ) -> Iterator[TimelineEvent]:
-                    events = iter_events([source_file], stats, iis_zone)
-                    for number, event in enumerate(events, start=1):
-                        if number % 1000 == 0:
-                            progress.update(overall, records=stats.records)
-                        yield event
-
-                inserted = store.insert_events(source_id, counted())
-                store.finish_source(
-                    source_id,
-                    stats.records,
-                    inserted,
-                    stats.errors,
-                    stats.error_samples,
-                    stats.coverage_json(),
-                )
-                total_errors += stats.errors
-                results.append((str(path), "betöltve", stats.records, inserted, stats.errors))
-                if stats.errors:
-                    _print_errors(stats.errors, stats.error_samples)
-                progress.update(overall, records=stats.records)
-                progress.advance(overall)
+        results, total_errors = _ingest_files(store, files, iis_tz, iis_zone)
         event_total = store.event_count()
 
     table = Table(title=f"Betöltés: {case}")
@@ -625,9 +736,38 @@ def ingest(
         err.print(f"[yellow]Összesen {total_errors} hibás rekord (lásd fent).[/yellow]")
 
 
+@contextlib.contextmanager
+def _case_or_live(
+    case: Path | None, save_logs: Path | None, *, include_iis: bool = True
+) -> Iterator[tuple[CaseStore, str]]:
+    """A megadott vizsgálati adatbázis, vagy élő gyűjtésből egy ideiglenes adatbázis."""
+    if case is not None:
+        if save_logs is not None:
+            err.print("[yellow]A --save-logs csak élő gyűjtésnél érvényes.[/yellow]")
+        with _open_case(case) as store:
+            yield store, str(case)
+        return
+    with (
+        _live_snapshot(save_logs, include_iis=include_iis) as snapshot,
+        tempfile.TemporaryDirectory(prefix="usertrail-db-", ignore_cleanup_errors=True) as tmp,
+        _open_case(Path(tmp) / "elo.db", create=True) as store,
+    ):
+        _ingest_files(store, discover_sources(snapshot.paths), None, None)
+        yield store, f"élő gép ({snapshot.host})"
+
+
 @app.command()
 def sources(
-    case: Annotated[Path, typer.Option("--case", help="Vizsgálati adatbázisfájl.")],
+    case: Annotated[
+        Path | None,
+        typer.Option(
+            "--case",
+            help=(
+                "Vizsgálati adatbázisfájl. Megadása nélkül a futtató gép aktuális naplóiból "
+                "dolgozik (élő gyűjtés)."
+            ),
+        ),
+    ] = None,
     tz: TzOpt = None,
     min_days: Annotated[
         int,
@@ -637,19 +777,21 @@ def sources(
             help="Ennél rövidebb Security-lefedettség felülírásra utaló figyelmeztetést ad.",
         ),
     ] = DEFAULT_MIN_DAYS,
+    save_logs: SaveLogsOpt = None,
+    no_iis: NoIisOpt = False,
     lang: LangOpt = Lang.hu,
 ) -> None:
     """Megmutatja, milyen naplóforrások és események állnak rendelkezésre, és mi hiányzik."""
     display_tz, _, _ = _time_options(tz, None, None)
     lang_code = lang.value
-    with _open_case(case) as store:
+    with _case_or_live(case, save_logs, include_iis=not no_iis) as (store, label):
         summaries = health.summarize(store)
         findings = health.check(store, summaries, min_days=min_days, tz=display_tz)
         files = store.sources()
 
     console = Console()
     table = Table(
-        title=f"{ui('sources.title', lang_code)}: {case}",
+        title=f"{ui('sources.title', lang_code)}: {label}",
         caption=f"{ui('header.tz', lang_code)}: {tz_label(display_tz, lang_code)}",
     )
     table.add_column(ui("col.channel", lang_code))
@@ -700,7 +842,16 @@ def sources(
 
 @app.command()
 def users(
-    case: Annotated[Path, typer.Option("--case", help="Vizsgálati adatbázisfájl.")],
+    case: Annotated[
+        Path | None,
+        typer.Option(
+            "--case",
+            help=(
+                "Vizsgálati adatbázisfájl. Megadása nélkül a futtató gép aktuális naplóiból "
+                "dolgozik (élő gyűjtés)."
+            ),
+        ),
+    ] = None,
     tz: Annotated[
         str | None,
         typer.Option("--tz", help="Megjelenítési időzóna (alapértelmezés: helyi idő)."),
@@ -709,13 +860,15 @@ def users(
         bool,
         typer.Option("--include-machine-accounts", help="A $ végű gépfiókok is látszódjanak."),
     ] = False,
+    save_logs: SaveLogsOpt = None,
+    no_iis: NoIisOpt = False,
 ) -> None:
     """A vizsgálatban ismert összes identitás listája."""
     display_tz, _, _ = _time_options(tz, None, None)
-    with _open_case(case) as store:
+    with _case_or_live(case, save_logs, include_iis=not no_iis) as (store, label):
         identities = store.identities(include_machine_accounts=include_machine_accounts)
 
-    table = Table(title=f"Ismert identitások: {case}", caption=f"Időzóna: {tz_label(display_tz)}")
+    table = Table(title=f"Ismert identitások: {label}", caption=f"Időzóna: {tz_label(display_tz)}")
     table.add_column("Fiók")
     table.add_column("Tartomány")
     table.add_column("SID")

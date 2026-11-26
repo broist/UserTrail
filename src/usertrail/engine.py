@@ -57,6 +57,8 @@ class TimelineRequest:
     collapse_gap: timedelta = DEFAULT_COLLAPSE_GAP
     alerts: bool = True
     alert_config: AlertConfig = field(default_factory=AlertConfig)
+    # Élő gyűjtésnél a gép, az időpont és a mentett csatornák leírása (live.LiveSnapshot).
+    live: dict[str, Any] | None = None
 
     @property
     def title(self) -> str:
@@ -86,6 +88,8 @@ class TimelineRequest:
             "fail_window_minutes": int(cfg.fail_window.total_seconds() // 60),
             "work_hours": f"{cfg.work_start:%H:%M}-{cfg.work_end:%H:%M}",
         }
+        if self.live is not None:
+            params["live"] = self.live
         if self.iis_tz is not None:
             params["iis_tz"] = tz_label(self.iis_tz, "en")
         return {k: v for k, v in params.items() if v is not None}

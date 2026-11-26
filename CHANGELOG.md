@@ -3,6 +3,16 @@
 A formátum a [Keep a Changelog](https://keepachangelog.com/hu/1.1.0/) ajánlását követi, a
 verziószámozás pedig a [Semantic Versioning](https://semver.org/lang/hu/) szabályait.
 
+## [Kiadatlan]
+
+### Új
+
+- **Élő gyűjtés:** ha sem `--case`, sem `--source` nincs megadva, a `timeline`, az `export`, a
+  `users` és a `sources` a futtató gép aktuális naplóiból dolgozik. Az eseménynaplókról
+  `wevtutil epl` pillanatkép készül (a `--from` időszakkal szűrve), az IIS-naplók helyét az
+  `applicationHost.config` adja. Új kapcsolók: `--save-logs` (a mentett naplók megőrzése) és
+  `--no-iis`. A riport paraméterei rögzítik a gépet, az időpontot és a mentés eredményét.
+
 ## [0.1.1] – 2026-11-25
 
 ### Új
